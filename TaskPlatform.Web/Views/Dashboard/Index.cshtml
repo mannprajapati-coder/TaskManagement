@@ -1,0 +1,173 @@
+@model TaskPlatform.Shared.ViewModels.Dashboard.DashboardOverviewViewModel
+@{
+    ViewData["Title"] = "Analytics Dashboard";
+    var workspaces = ViewBag.Workspaces as List<TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel>();
+    var currentWorkspace = ViewBag.CurrentWorkspace as TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel;
+}
+
+<div class="container-fluid py-4 px-4">
+    <!-- Header Banner -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="bi bi-speedometer2 text-primary me-2"></i>Dashboard Overview
+            </h2>
+            <p class="text-secondary mb-0">Track workspace metrics, task progress, and key performance indicators.</p>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            @if (workspaces.Any())
+            {
+                <form method="get" asp-action="Index" class="d-flex align-items-center">
+                    <label class="form-label me-2 mb-0 extra-small text-muted fw-semibold">Workspace:</label>
+                    <select name="workspaceId" onchange="this.form.submit()" class="form-select form-select-sm rounded-pill shadow-sm" style="min-width: 200px;">
+                        @foreach (var ws in workspaces)
+                        {
+                            <option value="@ws.Id" selected="@(currentWorkspace != null && currentWorkspace.Id == ws.Id)">@ws.Name</option>
+                        }
+                    </select>
+                </form>
+            }
+            <a asp-controller="Project" asp-action="Index" asp-route-workspaceId="@currentWorkspace?.Id" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                <i class="bi bi-folder-plus me-1"></i> View Projects
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary KPI Cards Row -->
+    <div class="row g-3 mb-4">
+        <!-- Total Tasks -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="rounded-circle bg-primary-subtle text-primary p-3 me-3 d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
+                        <i class="bi bi-list-task fs-3"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted extra-small d-block fw-semibold text-uppercase">Total Tasks</span>
+                        <h3 class="fw-bold text-dark mb-0">@Model.TotalTasks</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Tasks -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="rounded-circle bg-success-subtle text-success p-3 me-3 d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
+                        <i class="bi bi-check-circle fs-3"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted extra-small d-block fw-semibold text-uppercase">Completed Tasks</span>
+                        <h3 class="fw-bold text-dark mb-0">@Model.CompletedTasks</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- In Progress -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="rounded-circle bg-warning-subtle text-warning p-3 me-3 d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
+                        <i class="bi bi-arrow-repeat fs-3"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted extra-small d-block fw-semibold text-uppercase">In Progress</span>
+                        <h3 class="fw-bold text-dark mb-0">@Model.InProgressTasks</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overdue Tasks -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="rounded-circle bg-danger-subtle text-danger p-3 me-3 d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
+                        <i class="bi bi-exclamation-triangle fs-3"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted extra-small d-block fw-semibold text-uppercase">Overdue Tasks</span>
+                        <h3 class="fw-bold text-dark mb-0">@Model.OverdueTasks</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Rate & Upcoming Deadlines -->
+    <div class="row g-4 mb-4">
+        <!-- Completion Rate Progress -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-pie-chart text-info me-2"></i> Task Completion Rate</h5>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Overall Workspace Completion</span>
+                        <strong class="fs-4 text-primary">@Model.CompletionRatePercentage%</strong>
+                    </div>
+
+                    <div class="progress rounded-pill mb-4" style="height: 18px;">
+                        <div class="progress-bar bg-gradient" role="progressbar" style="width: @(Model.CompletionRatePercentage)%;" aria-valuenow="@Model.CompletionRatePercentage" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
+                    <div class="row text-center g-2 mt-2">
+                        <div class="col-4">
+                            <div class="p-2 border rounded-3 bg-light">
+                                <span class="extra-small text-muted d-block">Pending</span>
+                                <strong class="text-secondary">@Model.PendingTasks</strong>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border rounded-3 bg-light">
+                                <span class="extra-small text-muted d-block">In Progress</span>
+                                <strong class="text-warning">@Model.InProgressTasks</strong>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border rounded-3 bg-light">
+                                <span class="extra-small text-muted d-block">Completed</span>
+                                <strong class="text-success">@Model.CompletedTasks</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Task Deadlines -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-calendar-event text-primary me-2"></i> Upcoming Deadlines</h5>
+                    
+                    @if (Model.UpcomingTasks != null && Model.UpcomingTasks.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var task in Model.UpcomingTasks)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-bottom bg-transparent">
+                                    <div>
+                                        <a asp-controller="Task" asp-action="Detail" asp-route-id="@task.Id" class="fw-semibold text-dark text-decoration-none hover-primary">@task.Title</a>
+                                        <div class="extra-small text-muted">Due: @(task.DueDate?.ToString("MMM dd, yyyy") ?? "No date")</div>
+                                    </div>
+                                    <span class="badge bg-primary-subtle text-primary border rounded-pill px-3">@task.Status</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-check-all fs-1 d-block mb-2 text-success opacity-50"></i>
+                            No upcoming due tasks. All caught up!
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

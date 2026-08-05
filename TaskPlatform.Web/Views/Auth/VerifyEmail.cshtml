@@ -1,0 +1,27 @@
+@{
+    ViewData["Title"] = "Email Verification";
+    bool success = ViewBag.Success == true;
+}
+
+<div class="auth-wrapper">
+    <div class="auth-card text-center">
+        @if (success)
+        {
+            <div class="mb-3 text-success">
+                <i class="bi bi-patch-check-fill" style="font-size: 3.5rem;"></i>
+            </div>
+            <h3 class="fw-bold text-dark mb-2">Email Verified!</h3>
+            <p class="text-muted small mb-4">@ViewBag.Message</p>
+            <a asp-action="Login" class="btn btn-gradient w-100">Proceed to Login</a>
+        }
+        else
+        {
+            <div class="mb-3 text-danger">
+                <i class="bi bi-x-circle-fill" style="font-size: 3.5rem;"></i>
+            </div>
+            <h3 class="fw-bold text-dark mb-2">Verification Failed</h3>
+            <p class="text-muted small mb-4">@ViewBag.Message</p>
+            <a asp-action="Register" class="btn btn-outline-secondary w-100">Back to Registration</a>
+        }
+    </div>
+</div>

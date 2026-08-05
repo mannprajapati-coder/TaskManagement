@@ -1,0 +1,29 @@
+@model TaskPlatform.Shared.ViewModels.Workspace.JoinWorkspaceRequestViewModel
+@{
+    ViewData["Title"] = "Join Workspace";
+}
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-dark mb-1">Join Workspace</h3>
+            <p class="text-muted small">Enter your invite token to join a workspace</p>
+        </div>
+
+        <form asp-action="Join" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+            <div class="mb-4">
+                <label asp-for="Token" class="form-label small fw-semibold">Invite Token</label>
+                <input asp-for="Token" class="form-control text-center font-monospace" placeholder="Paste your token here..." required />
+                <span asp-validation-for="Token" class="text-danger small"></span>
+            </div>
+
+            <div class="d-flex gap-2">
+                <a asp-action="Index" class="btn btn-outline-secondary w-50">Cancel</a>
+                <button type="submit" class="btn btn-gradient w-50">Join <i class="bi bi-arrow-right"></i></button>
+            </div>
+        </form>
+    </div>
+</div>

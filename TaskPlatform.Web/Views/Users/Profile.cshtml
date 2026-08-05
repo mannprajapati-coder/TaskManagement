@@ -1,0 +1,64 @@
+@model TaskPlatform.Shared.ViewModels.User.UserProfileViewModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-3" style="width: 64px; height: 64px;">
+                            @(string.IsNullOrEmpty(Model.FullName) ? "U" : Model.FullName.Substring(0, 1).ToUpper())
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-0">@Model.FullName</h4>
+                            <p class="text-muted small mb-0">@Model.Email</p>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-semibold mb-3">Edit Profile</h5>
+                    <form asp-action="UpdateProfile" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Full Name</label>
+                            <input name="FullName" value="@Model.FullName" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Job Title</label>
+                            <input name="JobTitle" value="@Model.JobTitle" class="form-control" placeholder="e.g. Senior Software Engineer" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Bio</label>
+                            <textarea name="Bio" class="form-control" rows="3" placeholder="Short bio...">@Model.Bio</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-gradient px-4">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-3">Change Password</h5>
+                    <form asp-action="ChangePassword" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Current Password</label>
+                            <input type="password" name="CurrentPassword" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">New Password</label>
+                            <input type="password" name="NewPassword" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Confirm New Password</label>
+                            <input type="password" name="ConfirmPassword" class="form-control" required />
+                        </div>
+                        <button type="submit" class="btn btn-outline-danger px-4">Update Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+    <meta charset="utf-8" />
+    <title>TaskPlatform - Module Development Timeline Report</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 11pt;
+            color: #333333;
+            line-height: 1.5;
+            margin: 20px;
+        }
+        h1 {
+            color: #1e3a8a;
+            font-size: 20pt;
+            margin-bottom: 5px;
+        }
+        h2 {
+            color: #2563eb;
+            font-size: 14pt;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 5px;
+            margin-top: 25px;
+        }
+        .meta-table {
+            width: 100%;
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .meta-table td {
+            padding: 8px 12px;
+            font-size: 10pt;
+        }
+        .meta-label {
+            font-weight: bold;
+            color: #475569;
+            width: 200px;
+        }
+        table.timeline-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        table.timeline-table th {
+            background-color: #1e293b;
+            color: #ffffff;
+            font-weight: bold;
+            text-align: left;
+            padding: 10px;
+            font-size: 10pt;
+            border: 1px solid #1e293b;
+        }
+        table.timeline-table td {
+            padding: 9px 10px;
+            border: 1px solid #cbd5e1;
+            font-size: 9.5pt;
+            vertical-align: top;
+        }
+        table.timeline-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .status-done {
+            background-color: #dcfce7;
+            color: #166534;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .status-next {
+            background-color: #dbeafe;
+            color: #1e40af;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .status-plan {
+            background-color: #f1f5f9;
+            color: #475569;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>TaskPlatform — Module-by-Module Development Timeline</h1>
+    <p style="color: #64748b; margin-top: 0;">Project Execution & Estimated Effort Breakdown for Team Lead Review</p>
+
+    <table class="meta-table">
+        <tr>
+            <td class="meta-label">Project Name:</td>
+            <td>TaskPlatform (ASP.NET Core 8 Web API + Razor MVC)</td>
+        </tr>
+        <tr>
+            <td class="meta-label">Total Estimated Effort:</td>
+            <td><strong>~135 Working Hours (~20 Working Days / ~4 Calendar Weeks)</strong></td>
+        </tr>
+        <tr>
+            <td class="meta-label">Estimation Baseline:</td>
+            <td>Architecture & Infrastructure Setup = 2 Days; Each CRUD Module = 3 to 4 Hours.</td>
+        </tr>
+        <tr>
+            <td class="meta-label">Current Progress:</td>
+            <td><strong>4 Modules Completed</strong> (Architecture, Auth, User Management, Workspace)</td>
+        </tr>
+    </table>
+
+    <h2>1. Detailed Module Breakdown & Deliverables</h2>
+
+    <table class="timeline-table">
+        <thead>
+            <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 22%;">Module Name</th>
+                <th style="width: 48%;">Deliverables & Feature Description</th>
+                <th style="width: 10%;">Est. Hours</th>
+                <th style="width: 8%;">Est. Days</th>
+                <th style="width: 7%;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>0</strong></td>
+                <td><strong>Architecture & Core Setup</strong></td>
+                <td>Solution structure (`TaskPlatform.sln`), EF Core DbContexts, JWT RS256 token generator, Swagger API docs, Razor MVC base layout & global middleware.</td>
+                <td>16 hrs</td>
+                <td>2.0 Days</td>
+                <td><span class="status-done">Completed</span></td>
+            </tr>
+            <tr>
+                <td><strong>1</strong></td>
+                <td><strong>Authentication</strong></td>
+                <td>Registration, Email Verification, Login, RS256 JWT, Refresh Token Rotation with reuse detection, Password Reset, Google Login, MFA, Auth Razor Views.</td>
+                <td>8 hrs</td>
+                <td>1.0 Day</td>
+                <td><span class="status-done">Completed</span></td>
+            </tr>
+            <tr>
+                <td><strong>2</strong></td>
+                <td><strong>User Management</strong></td>
+                <td>Profile editing (Bio, Job Title), Password Change, User Preferences (`TimeZone`, `Language`), Active Device Session tracking & remote revocation.</td>
+                <td>7 hrs</td>
+                <td>1.0 Day</td>
+                <td><span class="status-done">Completed</span></td>
+            </tr>
+            <tr>
+                <td><strong>3</strong></td>
+                <td><strong>Workspace Management</strong></td>
+                <td>Workspace CRUD, Settings, Soft Archiving/Unarchive, Token-based Invite link generator & Join Workspace via Invite link.</td>
+                <td>7 hrs</td>
+                <td>1.0 Day</td>
+                <td><span class="status-done">Completed</span></td>
+            </tr>
+            <tr>
+                <td><strong>4</strong></td>
+                <td><strong>Project Management</strong></td>
+                <td>Project Creation, Start/End date validations (`EndDate >= StartDate`), Status & Client fields, Favoriting projects, Project detail views.</td>
+                <td>7.5 hrs</td>
+                <td>1.0 Day</td>
+                <td><span class="status-next">Next Up</span></td>
+            </tr>
+            <tr>
+                <td><strong>5</strong></td>
+                <td><strong>Project Members</strong></td>
+                <td>Member assignment, Project Role overrides, Member removal, Join Request submission & approval workflow.</td>
+                <td>7 hrs</td>
+                <td>1.0 Day</td>
+                <td><span class="status-plan">Planned</span></td>
+            </tr>
+            <tr>
+                <td><strong>6</strong></td>
+                <td><strong>Task Engine (Core)</strong></td>
+                <td>Core `Task` entity, Priority & Status workflows, Due/Start dates, Estimated vs Actual hours, Filtering by Project/Status/Priority/Assignee, UI Task list & detail views.</td>
+                <td>15 hrs</td>
+                <td>2.0 Days</td>
+                <td><span class="status-plan">Planned</span></td>
+            </tr>
+            <tr>
+                <td><strong>7</strong></td>
+                <td><strong>Subtasks</strong></td>
+                <td>Parent-Child Subtask tree hierarchy, subtask completion constraints (parent blocked until subtasks done), deletion cascade rules.</td>
+                <td>4 hrs</td>
+                <td>0.5 Day</td>
+                <td><span class="status-plan">Planned</span></td>
+            </tr>
+            <tr>
+                <td><strong>8</strong></td>
+                <td><strong>Task Assignment</strong></td>
+                <td>Multi-Assignee assignment, Primary Assignee auto-sync, Task Watchers & automatic event subscription.</td>
+                <td>7 hrs</td>
+                <td>1.0 Day</td>
+                <td><span class="status-plan">Planned</span></td>
+            </tr>
+            <tr>
+                <td><strong>9</strong></td>
+                <td><strong>Task Checklists</strong></td>
+                <td>Interactive Task Checklists, item toggle management, completion progress bar.</td>
+                <td>3.5 hrs</td>
+                <td>0.5 Day</td>
+                <td><span class="status-plan">Planned</span></td>
+            </tr>
+            <tr>
+                <td><strong>10</strong></td>
+                <td><strong>Recurring Tasks</strong></td>
+                <td>Recurrence rules setup (Daily, Weekly, Monthly, Custom cron) & Hangfire background worker for automated task generation.</td>
+                <td>7.5 hrs</td>
+                <td>1.0 Day</td>
+                <td><span class="status-plan">Planned</span></td>
+            </tr>
+            <tr>
+                <td><strong>11</strong></td>
+                <td><strong>Comments & @Mentions</strong></td>
+                <td>Task discussion thread, Markdown comments, User `@mentions` parser & notification triggers.</td>
+                <td>4 hrs</td>
+                <td>0.5 Day</td>
+                <td><span class="status-plan">Planned</span></td>
+            </tr>
+            <tr>
+                <td><strong>12</strong></td>
+                <td><strong>File Attachments</strong></td>
+                <td>`IFileStorageService` abstraction (Local disk / Azure storage), File extension & size validation, Upload drag-drop zone, Download & Previews.</td>
+                <td>7 hrs</td>
+                <td>1.0 Day</td>
+                <td><span class="status-plan">Planned</span></td>
+            </tr>
+            <tr>
+                <td><strong>13</strong></td>
+                <td><strong>Activity Timeline</strong></td>
+                <td>System Audit Log recorder for Task/Project mutations, Task Activity history timeline tab.</td>
+                <td>7.5 hrs</td>
+                <td>1.0 Day</td>
+                <td><span class="status-plan">Planned</span></td>
+            </tr>
+            <tr>
+                <td><strong>14</strong></td>
+                <td><strong>Notifications</strong></td>
+                <td>SignalR `ActivityHub` real-time websocket connection, In-App Notification Center, Header notification bell dropdown, Email alert dispatcher.</td>
+                <td>7.5 hrs</td>
+                <td>1.0 Day</td>
+                <td><span class="status-plan">Planned</span></td>
+            </tr>
+            <tr>
+                <td><strong>15</strong></td>
+                <td><strong>Calendar View</strong></td>
+                <td>FullCalendar JS integration (Month, Week, Day views), Task Calendar API feed, Drag-and-drop due date rescheduling.</td>
+                <td>7.5 hrs</td>
+                <td>1.0 Day</td>
+                <td><span class="status-plan">Planned</span></td>
+            </tr>
+            <tr>
+                <td><strong>16</strong></td>
+                <td><strong>Default Dashboard & Polish</strong></td>
+                <td>Central Overview Dashboard metrics, Workload breakdown charts (Chart.js), Project status summary widgets, Solution security & tenancy hardening pass.</td>
+                <td>12 hrs</td>
+                <td>1.5 Days</td>
+                <td><span class="status-plan">Planned</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>2. Weekly Execution Schedule</h2>
+
+    <ul>
+        <li><strong>Week 1 (Days 1–5): Core Setup, Identity & Workspaces</strong> <em>(Completed)</em>
+            <ul>
+                <li>Days 1–2: Architecture & Solution Setup (2 Days)</li>
+                <li>Day 3: Authentication Module (1 Day)</li>
+                <li>Day 4: User Management Module (1 Day)</li>
+                <li>Day 5: Workspace Management Module (1 Day)</li>
+            </ul>
+        </li>
+        <li style="margin-top: 8px;"><strong>Week 2 (Days 6–10): Projects & Task Management Engine</strong>
+            <ul>
+                <li>Day 6: Project Management Module (1 Day)</li>
+                <li>Day 7: Project Members & Join Requests Module (1 Day)</li>
+                <li>Days 8–9: Core Task Management Engine (2 Days)</li>
+                <li>Day 10: Subtasks Module (0.5 Day) + Task Assignment Module (0.5 Day)</li>
+            </ul>
+        </li>
+        <li style="margin-top: 8px;"><strong>Week 3 (Days 11–15): Task Features & Collaboration</strong>
+            <ul>
+                <li>Day 11: Task Checklists Module (0.5 Day) + Recurring Tasks Module (0.5 Day)</li>
+                <li>Day 12: Comments & Mentions Module (0.5 Day) + File Attachments Module (0.5 Day)</li>
+                <li>Day 13: Activity Audit Timeline Module (1 Day)</li>
+                <li>Days 14–15: SignalR & Email Notifications Module (1 Day)</li>
+            </ul>
+        </li>
+        <li style="margin-top: 8px;"><strong>Week 4 (Days 16–20): Planning Views, Dashboard & Delivery</strong>
+            <ul>
+                <li>Days 16–17: Interactive Calendar View Module (1 Day)</li>
+                <li>Days 18–19: Central Dashboard & Analytics Module (1.5 Days)</li>
+                <li>Day 20: Final Security Audit, Testing Pass & Project Delivery (1 Day)</li>
+            </ul>
+        </li>
+    </ul>
+
+</body>
+</html>

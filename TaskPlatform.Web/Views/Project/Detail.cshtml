@@ -1,0 +1,61 @@
+@model TaskPlatform.Shared.ViewModels.Project.ProjectViewModel
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="container py-4">
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <h3 class="fw-bold text-dark mb-0">@Model.Name</h3>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">@Model.Status</span>
+                    </div>
+                    <p class="text-muted small mb-0">@(string.IsNullOrEmpty(Model.Description) ? "No description provided." : Model.Description)</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a asp-action="Members" asp-route-id="@Model.Id" class="btn btn-outline-secondary rounded-pill px-3"><i class="bi bi-people"></i> Team Members</a>
+                    <a asp-controller="Task" asp-action="Create" asp-route-projectId="@Model.Id" class="btn btn-gradient rounded-pill px-3"><i class="bi bi-plus-lg"></i> Create Task</a>
+                    <a asp-controller="Task" asp-action="Index" asp-route-projectId="@Model.Id" class="btn btn-gradient rounded-pill px-3">View Tasks</a>
+                </div>
+            </div>
+            <hr class="my-3 text-muted opacity-25" />
+            <div class="row text-center g-3">
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded-3">
+                        <span class="extra-small text-muted d-block">Start Date</span>
+                        <strong class="text-dark">@(Model.StartDate?.ToString("MMM dd, yyyy") ?? "Not Set")</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded-3">
+                        <span class="extra-small text-muted d-block">End Date</span>
+                        <strong class="text-dark">@(Model.EndDate?.ToString("MMM dd, yyyy") ?? "Not Set")</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded-3">
+                        <span class="extra-small text-muted d-block">Client</span>
+                        <strong class="text-dark">@(Model.Client ?? "Internal")</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded-3">
+                        <span class="extra-small text-muted d-block">Budget</span>
+                        <strong class="text-dark">@(Model.Budget.HasValue ? $"${Model.Budget:N2}" : "Unspecified")</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Engine Placeholder (Coming in Sprint 04) -->
+    <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+        <div class="card-body">
+            <i class="bi bi-kanban text-primary display-4 mb-3"></i>
+            <h5 class="fw-bold">Task Management Engine</h5>
+            <p class="text-muted small">Task status workflows, priority boards, and hour tracking wire in Sprint 04!</p>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,59 @@
+@model List<TaskPlatform.Shared.ViewModels.Project.ProjectViewModel>
+@{
+    ViewData["Title"] = "Projects";
+    var workspaceId = ViewBag.WorkspaceId;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Projects</h3>
+            <p class="text-muted small mb-0">Manage workspace projects, deliverables, and timelines</p>
+        </div>
+        <a asp-action="Create" asp-route-workspaceId="@workspaceId" class="btn btn-gradient rounded-pill px-3"><i class="bi bi-plus-lg"></i> New Project</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 bg-white rounded-4 border shadow-sm">
+            <i class="bi bi-folder-symlink text-muted display-4"></i>
+            <h4 class="fw-bold mt-3">No Projects Yet</h4>
+            <p class="text-muted small mb-4">Create your first project in this workspace to track tasks and milestones</p>
+            <a asp-action="Create" asp-route-workspaceId="@workspaceId" class="btn btn-gradient px-4 rounded-pill">Create Project</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var proj in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 hover-shadow transition position-relative">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="fw-bold text-dark mb-0">@proj.Name</h5>
+                                <form asp-action="ToggleFavorite" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@proj.Id" />
+                                    <input type="hidden" name="workspaceId" value="@workspaceId" />
+                                    <button type="submit" class="btn btn-sm p-0 border-0 text-warning" title="Toggle Favorite">
+                                        <i class="bi @(proj.IsFavorite ? "bi-star-fill" : "bi-star")"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            <p class="text-muted small flex-grow-1">@(string.IsNullOrEmpty(proj.Description) ? "No project description." : proj.Description)</p>
+                            
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">@proj.Status</span>
+                                <div class="d-flex gap-2">
+                                    <a asp-action="Detail" asp-route-id="@proj.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3">View</a>
+                                    <a asp-action="Members" asp-route-id="@proj.Id" class="btn btn-sm btn-outline-secondary rounded-circle" title="Team Members"><i class="bi bi-people"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

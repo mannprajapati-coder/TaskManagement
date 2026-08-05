@@ -1,0 +1,11 @@
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\TaskPlatform.Shared\bin\Debug\net9.0\TaskPlatform.Shared.deps.json
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\TaskPlatform.Shared\bin\Debug\net9.0\TaskPlatform.Shared.dll
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\TaskPlatform.Shared\bin\Debug\net9.0\TaskPlatform.Shared.pdb
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\TaskPlatform.Shared\obj\Debug\net9.0\TaskPlatform.Shared.GeneratedMSBuildEditorConfig.editorconfig
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\TaskPlatform.Shared\obj\Debug\net9.0\TaskPlatform.Shared.AssemblyInfoInputs.cache
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\TaskPlatform.Shared\obj\Debug\net9.0\TaskPlatform.Shared.AssemblyInfo.cs
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\TaskPlatform.Shared\obj\Debug\net9.0\TaskPlatform.Shared.csproj.CoreCompileInputs.cache
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\TaskPlatform.Shared\obj\Debug\net9.0\TaskPlatform.Shared.dll
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\TaskPlatform.Shared\obj\Debug\net9.0\refint\TaskPlatform.Shared.dll
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\TaskPlatform.Shared\obj\Debug\net9.0\TaskPlatform.Shared.pdb
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\TaskPlatform.Shared\obj\Debug\net9.0\ref\TaskPlatform.Shared.dll

@@ -1,0 +1,15 @@
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\bin\Debug\net9.0\Projects.deps.json
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\bin\Debug\net9.0\Projects.dll
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\bin\Debug\net9.0\Projects.pdb
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\bin\Debug\net9.0\TaskPlatform.Shared.dll
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\bin\Debug\net9.0\TaskPlatform.Shared.pdb
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\obj\Debug\net9.0\Projects.csproj.AssemblyReference.cache
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\obj\Debug\net9.0\Projects.GeneratedMSBuildEditorConfig.editorconfig
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\obj\Debug\net9.0\Projects.AssemblyInfoInputs.cache
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\obj\Debug\net9.0\Projects.AssemblyInfo.cs
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\obj\Debug\net9.0\Projects.csproj.CoreCompileInputs.cache
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\obj\Debug\net9.0\Projects.csproj.Up2Date
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\obj\Debug\net9.0\Projects.dll
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\obj\Debug\net9.0\refint\Projects.dll
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\obj\Debug\net9.0\Projects.pdb
+D:\Mann\Project\TaskManagement\TaskManagementPlatform\Modules\Projects\obj\Debug\net9.0\ref\Projects.dll

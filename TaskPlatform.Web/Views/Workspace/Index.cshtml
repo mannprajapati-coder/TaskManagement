@@ -1,0 +1,54 @@
+@model List<TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel>
+@{
+    ViewData["Title"] = "Workspaces";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">My Workspaces</h3>
+            <p class="text-muted small mb-0">Manage your team workspaces and environments</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Join" class="btn btn-outline-secondary rounded-pill px-3"><i class="bi bi-link-45deg"></i> Join Workspace</a>
+            <a asp-action="Create" class="btn btn-gradient rounded-pill px-3"><i class="bi bi-plus-lg"></i> New Workspace</a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 bg-white rounded-4 border shadow-sm">
+            <i class="bi bi-diagram-3 text-muted display-4"></i>
+            <h4 class="fw-bold mt-3">No Workspaces Found</h4>
+            <p class="text-muted small mb-4">Create your first workspace to start collaborating on projects</p>
+            <a asp-action="Create" class="btn btn-gradient px-4 rounded-pill">Create Workspace</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var ws in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 hover-shadow transition">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="fw-bold text-dark mb-0">@ws.Name</h5>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">@ws.MemberCount Members</span>
+                            </div>
+                            <p class="text-muted small flex-grow-1">@(string.IsNullOrEmpty(ws.Description) ? "No description provided." : ws.Description)</p>
+                            
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                <span class="extra-small text-muted" style="font-size: 0.75rem;">Created @ws.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                <div class="d-flex gap-2">
+                                    <a asp-action="Details" asp-route-id="@ws.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3">Open</a>
+                                    <a asp-action="Settings" asp-route-id="@ws.Id" class="btn btn-sm btn-outline-secondary rounded-circle" title="Settings"><i class="bi bi-gear"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

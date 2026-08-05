@@ -1,0 +1,123 @@
+@model TaskPlatform.Shared.ViewModels.Task.TaskViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    var subtasks = ViewBag.Subtasks as List<TaskPlatform.Shared.ViewModels.Task.SubtaskViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Task.SubtaskViewModel>();
+    var assignees = ViewBag.Assignees as List<TaskPlatform.Shared.ViewModels.Task.TaskAssigneeViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Task.TaskAssigneeViewModel>();
+    var watchers = ViewBag.Watchers as List<TaskPlatform.Shared.ViewModels.Task.TaskWatcherViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Task.TaskWatcherViewModel>();
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill mb-2">Priority: @Model.Priority</span>
+                            <h3 class="fw-bold text-dark mb-1">@Model.Title</h3>
+                            <span class="extra-small text-muted" style="font-size: 0.75rem;">Created @Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <form asp-action="ToggleWatcher" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-warning rounded-pill px-3" title="Watch Task">
+                                    <i class="bi bi-eye"></i> Watch (@watchers.Count)
+                                </button>
+                            </form>
+                            <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn btn-sm btn-outline-secondary rounded-pill px-3"><i class="bi bi-arrow-left"></i> Back to Tasks</a>
+                        </div>
+                    </div>
+
+                    <p class="text-secondary mb-4">@(string.IsNullOrEmpty(Model.Description) ? "No detailed description." : Model.Description)</p>
+
+                    <hr class="my-3 text-muted opacity-25" />
+
+                    <div class="row text-center g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="extra-small text-muted d-block">Status</span>
+                                <strong class="text-dark">@Model.Status</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="extra-small text-muted d-block">Due Date</span>
+                                <strong class="text-dark">@(Model.DueDate?.ToString("MMM dd, yyyy") ?? "Not Set")</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="extra-small text-muted d-block">Est. Hours</span>
+                                <strong class="text-dark">@(Model.EstimatedHours ?? 0) hrs</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="extra-small text-muted d-block">Actual Hours</span>
+                                <strong class="text-dark">@(Model.ActualHours ?? 0) hrs</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3">Update Status</h5>
+                    <form asp-action="UpdateStatus" method="post" class="d-flex gap-2 mb-4">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="TaskId" value="@Model.Id" />
+                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
+
+                        <select name="Status" class="form-select rounded-pill" style="max-width: 240px;">
+                            <option value="Todo" selected="@(Model.Status == "Todo")">Todo</option>
+                            <option value="InProgress" selected="@(Model.Status == "InProgress")">In Progress</option>
+                            <option value="InReview" selected="@(Model.Status == "InReview")">In Review</option>
+                            <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
+                            <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                        </select>
+                        <button type="submit" class="btn btn-gradient rounded-pill px-4">Update Status</button>
+                    </form>
+
+                    <div class="d-flex justify-content-end">
+                        <form asp-action="Delete" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                            <button type="submit" onclick="return confirm('Delete this task and all its subtasks?')" class="btn btn-outline-danger btn-sm rounded-pill px-3">Delete Task</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subtasks Section (Sprint 05) -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-diagram-2 me-2 text-primary"></i> Subtasks (@subtasks.Count)</h5>
+                    
+                    @if (subtasks.Any())
+                    {
+                        <ul class="list-group list-group-flush mb-4">
+                            @foreach (var st in subtasks)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2 border-bottom">
+                                    <div>
+                                        <span class="fw-semibold @(st.Status == "Completed" ? "text-decoration-line-through text-muted" : "text-dark")">@st.Title</span>
+                                    </div>
+                                    <span class="badge @(st.Status == "Completed" ? "bg-success-subtle text-success border border-success" : "bg-light text-dark border") rounded-pill">@st.Status</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    <form asp-action="CreateSubtask" method="post" class="mt-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ParentTaskId" value="@Model.Id" />
+                        <input type="hidden" name="ProjectId" value="@Model.ProjectId" />
+                        <div class="input-group">
+                            <input type="text" name="Title" class="form-control form-control-sm" placeholder="Add a new subtask..." required />
+                            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Add Subtask</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

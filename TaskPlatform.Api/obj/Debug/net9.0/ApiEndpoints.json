@@ -1,0 +1,1970 @@
+[
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.AuthController",
+    "Method": "EnableMfa",
+    "RelativePath": "api/v1/Auth/EnableMfa",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Auth.MfaSetupResponseViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.AuthController",
+    "Method": "ForgotPassword",
+    "RelativePath": "api/v1/Auth/ForgotPassword",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Auth.ForgotPasswordRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.AuthController",
+    "Method": "GoogleLogin",
+    "RelativePath": "api/v1/Auth/GoogleLogin",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Auth.GoogleLoginRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Auth.AuthResponseViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.AuthController",
+    "Method": "Login",
+    "RelativePath": "api/v1/Auth/Login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Auth.LoginRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Auth.AuthResponseViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.AuthController",
+    "Method": "Logout",
+    "RelativePath": "api/v1/Auth/Logout",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Auth.RefreshTokenRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.AuthController",
+    "Method": "RefreshToken",
+    "RelativePath": "api/v1/Auth/RefreshToken",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Auth.RefreshTokenRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Auth.AuthResponseViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.AuthController",
+    "Method": "Register",
+    "RelativePath": "api/v1/Auth/Register",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Auth.RegisterRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Auth.AuthResponseViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.AuthController",
+    "Method": "ResetPassword",
+    "RelativePath": "api/v1/Auth/ResetPassword",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Auth.ResetPasswordRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.AuthController",
+    "Method": "VerifyEmail",
+    "RelativePath": "api/v1/Auth/VerifyEmail",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Auth.VerifyEmailRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.AuthController",
+    "Method": "VerifyMfa",
+    "RelativePath": "api/v1/Auth/VerifyMfa",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Auth.VerifyMfaRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Auth.AuthResponseViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.CalendarController",
+    "Method": "GetEvents",
+    "RelativePath": "api/v1/Calendar/Events/{workspaceId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "workspaceId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "start",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "end",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Calendar.CalendarEventViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.CalendarController",
+    "Method": "Reschedule",
+    "RelativePath": "api/v1/Calendar/Reschedule",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Calendar.RescheduleTaskDateRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.CollaborationController",
+    "Method": "DeleteAttachment",
+    "RelativePath": "api/v1/Collaboration/Attachments/{attachmentId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "attachmentId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.CollaborationController",
+    "Method": "AddAttachment",
+    "RelativePath": "api/v1/Collaboration/Attachments/Add",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "taskId",
+        "Type": "System.Guid",
+        "IsRequired": false
+      },
+      {
+        "Name": "fileName",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "filePath",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "fileSize",
+        "Type": "System.Int64",
+        "IsRequired": false
+      },
+      {
+        "Name": "contentType",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Collaboration.AttachmentViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.CollaborationController",
+    "Method": "DeleteComment",
+    "RelativePath": "api/v1/Collaboration/Comments/{commentId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "commentId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.CollaborationController",
+    "Method": "AddComment",
+    "RelativePath": "api/v1/Collaboration/Comments/Add",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Collaboration.AddCommentRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Collaboration.CommentViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.CollaborationController",
+    "Method": "GetAttachments",
+    "RelativePath": "api/v1/Collaboration/Tasks/{taskId}/Attachments",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "taskId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Collaboration.AttachmentViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.CollaborationController",
+    "Method": "GetComments",
+    "RelativePath": "api/v1/Collaboration/Tasks/{taskId}/Comments",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "taskId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Collaboration.CommentViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.DashboardController",
+    "Method": "GetOverview",
+    "RelativePath": "api/v1/Dashboard/Overview/{workspaceId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "workspaceId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Dashboard.DashboardOverviewViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.NotificationsController",
+    "Method": "GetMyNotifications",
+    "RelativePath": "api/v1/Notifications",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "unreadOnly",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Notification.NotificationItemViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.NotificationsController",
+    "Method": "LogActivity",
+    "RelativePath": "api/v1/Notifications/Activity/Log",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Notification.CreateActivityLogRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.NotificationsController",
+    "Method": "GetProjectActivity",
+    "RelativePath": "api/v1/Notifications/Activity/Project/{projectId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "projectId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.NotificationsController",
+    "Method": "GetWorkspaceActivity",
+    "RelativePath": "api/v1/Notifications/Activity/Workspace/{workspaceId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "workspaceId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.NotificationsController",
+    "Method": "MarkAllAsRead",
+    "RelativePath": "api/v1/Notifications/MarkAllAsRead",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.NotificationsController",
+    "Method": "MarkAsRead",
+    "RelativePath": "api/v1/Notifications/MarkAsRead/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "GetById",
+    "RelativePath": "api/v1/Projects/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Project.ProjectViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "GetMembers",
+    "RelativePath": "api/v1/Projects/{projectId}/Members",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "projectId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Project.ProjectMemberViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "GetPendingJoinRequests",
+    "RelativePath": "api/v1/Projects/{projectId}/PendingJoinRequests",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "projectId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Project.ProjectJoinRequestViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "RemoveMember",
+    "RelativePath": "api/v1/Projects/{projectId}/RemoveMember/{targetUserId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "projectId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "targetUserId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "UpdateMemberRole",
+    "RelativePath": "api/v1/Projects/{projectId}/UpdateMemberRole/{targetUserId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "projectId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "targetUserId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "role",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "AddMember",
+    "RelativePath": "api/v1/Projects/AddMember",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Project.AddProjectMemberRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Project.ProjectMemberViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "Archive",
+    "RelativePath": "api/v1/Projects/Archive/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "Create",
+    "RelativePath": "api/v1/Projects/Create",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Project.CreateProjectRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Project.ProjectViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "GetByWorkspace",
+    "RelativePath": "api/v1/Projects/GetByWorkspace/{workspaceId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "workspaceId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Project.ProjectViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "ResolveJoinRequest",
+    "RelativePath": "api/v1/Projects/ResolveJoinRequest",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Project.ResolveJoinRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "SubmitJoinRequest",
+    "RelativePath": "api/v1/Projects/SubmitJoinRequest/{projectId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "projectId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Project.ProjectJoinRequestViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "ToggleFavorite",
+    "RelativePath": "api/v1/Projects/ToggleFavorite/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "Unarchive",
+    "RelativePath": "api/v1/Projects/Unarchive/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.ProjectsController",
+    "Method": "Update",
+    "RelativePath": "api/v1/Projects/Update",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Project.UpdateProjectRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Project.ProjectViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "GetById",
+    "RelativePath": "api/v1/Tasks/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Task.TaskViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "Delete",
+    "RelativePath": "api/v1/Tasks/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "DeleteWithSubtasks",
+    "RelativePath": "api/v1/Tasks/{parentTaskId}/DeleteWithSubtasks",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "parentTaskId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "GetSubtasks",
+    "RelativePath": "api/v1/Tasks/{parentTaskId}/Subtasks",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "parentTaskId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Task.SubtaskViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "GetAssignees",
+    "RelativePath": "api/v1/Tasks/{taskId}/Assignees",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "taskId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Task.TaskAssigneeViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "GetChecklistItems",
+    "RelativePath": "api/v1/Tasks/{taskId}/Checklists",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "taskId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Task.ChecklistItemViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "GetRecurringRule",
+    "RelativePath": "api/v1/Tasks/{taskId}/RecurringRule",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "taskId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Task.RecurringTaskRuleViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "RemoveAssignee",
+    "RelativePath": "api/v1/Tasks/{taskId}/RemoveAssignee/{targetUserId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "taskId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "targetUserId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "ToggleWatcher",
+    "RelativePath": "api/v1/Tasks/{taskId}/ToggleWatcher",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "taskId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "GetWatchers",
+    "RelativePath": "api/v1/Tasks/{taskId}/Watchers",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "taskId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Task.TaskWatcherViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "AddAssignee",
+    "RelativePath": "api/v1/Tasks/AddAssignee",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Task.AddTaskAssigneeRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Task.TaskAssigneeViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "AddChecklistItem",
+    "RelativePath": "api/v1/Tasks/AddChecklistItem",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Task.AddChecklistItemRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Task.ChecklistItemViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "Create",
+    "RelativePath": "api/v1/Tasks/Create",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Task.CreateTaskRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Task.TaskViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "CreateSubtask",
+    "RelativePath": "api/v1/Tasks/CreateSubtask",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Task.CreateSubtaskRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Task.SubtaskViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "DeleteChecklistItem",
+    "RelativePath": "api/v1/Tasks/DeleteChecklistItem/{itemId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "itemId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "GetByProject",
+    "RelativePath": "api/v1/Tasks/GetByProject/{projectId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "projectId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "status",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "priority",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Task.TaskViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "ProcessRecurringTasks",
+    "RelativePath": "api/v1/Tasks/ProcessRecurringTasks",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Int32, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "SetRecurringRule",
+    "RelativePath": "api/v1/Tasks/SetRecurringRule",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Task.SetRecurringTaskRuleRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Task.RecurringTaskRuleViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "ToggleChecklistItem",
+    "RelativePath": "api/v1/Tasks/ToggleChecklistItem/{itemId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "itemId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "Update",
+    "RelativePath": "api/v1/Tasks/Update",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Task.UpdateTaskRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Task.TaskViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.TasksController",
+    "Method": "UpdateStatus",
+    "RelativePath": "api/v1/Tasks/UpdateStatus",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Task.UpdateTaskStatusRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Task.TaskViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.UsersController",
+    "Method": "ChangePassword",
+    "RelativePath": "api/v1/Users/ChangePassword",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.User.ChangePasswordRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.UsersController",
+    "Method": "GetMyActiveSessions",
+    "RelativePath": "api/v1/Users/GetMyActiveSessions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.User.ActiveSessionViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.UsersController",
+    "Method": "GetMyPreferences",
+    "RelativePath": "api/v1/Users/GetMyPreferences",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.User.UserPreferenceViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.UsersController",
+    "Method": "GetMyProfile",
+    "RelativePath": "api/v1/Users/GetMyProfile",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.User.UserProfileViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.UsersController",
+    "Method": "RevokeSession",
+    "RelativePath": "api/v1/Users/RevokeSession/{sessionId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "sessionId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.UsersController",
+    "Method": "UpdatePreferences",
+    "RelativePath": "api/v1/Users/UpdatePreferences",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.User.UserPreferenceViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.User.UserPreferenceViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.UsersController",
+    "Method": "UpdateProfile",
+    "RelativePath": "api/v1/Users/UpdateProfile",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.User.UpdateProfileRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.User.UserProfileViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.WorkspacesController",
+    "Method": "GetMyWorkspaces",
+    "RelativePath": "api/v1/Workspaces",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.WorkspacesController",
+    "Method": "GetWorkspaceById",
+    "RelativePath": "api/v1/Workspaces/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.WorkspacesController",
+    "Method": "Archive",
+    "RelativePath": "api/v1/Workspaces/Archive/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.WorkspacesController",
+    "Method": "Create",
+    "RelativePath": "api/v1/Workspaces/Create",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Workspace.CreateWorkspaceRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.WorkspacesController",
+    "Method": "InviteMembers",
+    "RelativePath": "api/v1/Workspaces/InviteMembers",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Workspace.InviteMembersRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Workspace.WorkspaceInviteViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.WorkspacesController",
+    "Method": "JoinViaInvite",
+    "RelativePath": "api/v1/Workspaces/JoinViaInvite/{token}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.WorkspacesController",
+    "Method": "Unarchive",
+    "RelativePath": "api/v1/Workspaces/Unarchive/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "TaskPlatform.Api.Controllers.WorkspacesController",
+    "Method": "UpdateSettings",
+    "RelativePath": "api/v1/Workspaces/UpdateSettings",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "TaskPlatform.Shared.ViewModels.Workspace.UpdateWorkspaceSettingsRequestViewModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "TaskPlatform.Shared.ViewModels.Common.ApiResponse\u00601[[TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel, TaskPlatform.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  }
+]

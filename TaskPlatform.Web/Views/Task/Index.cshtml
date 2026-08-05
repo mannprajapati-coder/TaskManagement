@@ -1,0 +1,77 @@
+@model List<TaskPlatform.Shared.ViewModels.Task.TaskViewModel>
+@{
+    var project = ViewBag.Project as TaskPlatform.Shared.ViewModels.Project.ProjectViewModel;
+    ViewData["Title"] = $"{project?.Name ?? "Project"} Tasks";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Task Board</h3>
+            <p class="text-muted small mb-0">Project tasks for <strong>@project?.Name</strong></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="Project" asp-action="Detail" asp-route-id="@project?.Id" class="btn btn-outline-secondary rounded-pill px-3"><i class="bi bi-arrow-left"></i> Project Overview</a>
+            <a asp-action="Gantt" asp-route-projectId="@project?.Id" class="btn btn-outline-secondary rounded-pill px-3"><i class="bi bi-kanban-fill"></i> Gantt Chart</a>
+            <a asp-action="Create" asp-route-projectId="@project?.Id" class="btn btn-gradient rounded-pill px-3"><i class="bi bi-plus-lg"></i> New Task</a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 bg-white rounded-4 border shadow-sm">
+            <i class="bi bi-card-checklist text-muted display-4"></i>
+            <h4 class="fw-bold mt-3">No Tasks Found</h4>
+            <p class="text-muted small mb-4">Get started by creating your first task for this project</p>
+            <a asp-action="Create" asp-route-projectId="@project?.Id" class="btn btn-gradient px-4 rounded-pill">Create Task</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var task in Model)
+            {
+                var priorityClass = task.Priority switch
+                {
+                    "Urgent" => "bg-danger text-white",
+                    "High" => "bg-warning-subtle text-dark border border-warning",
+                    "Medium" => "bg-info-subtle text-info border border-info",
+                    _ => "bg-secondary-subtle text-secondary"
+                };
+
+                var statusClass = task.Status switch
+                {
+                    "Completed" => "bg-success-subtle text-success border border-success",
+                    "InProgress" => "bg-primary-subtle text-primary border border-primary",
+                    "InReview" => "bg-warning-subtle text-dark border border-warning",
+                    "Cancelled" => "bg-secondary-subtle text-secondary border border-secondary",
+                    _ => "bg-light text-dark border"
+                };
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 hover-shadow transition">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="fw-bold text-dark mb-0">@task.Title</h6>
+                                <span class="badge @priorityClass rounded-pill" style="font-size: 0.7rem;">@task.Priority</span>
+                            </div>
+                            <p class="text-muted small flex-grow-1 mb-3">@(string.IsNullOrEmpty(task.Description) ? "No task description." : task.Description)</p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="badge @statusClass rounded-pill">@task.Status</span>
+                                <span class="extra-small text-muted" style="font-size: 0.75rem;">Due: @(task.DueDate?.ToString("MMM dd") ?? "No Date")</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                <div class="d-flex align-items-center gap-1 extra-small text-muted" style="font-size: 0.75rem;">
+                                    <i class="bi bi-clock me-1"></i> @(task.ActualHours ?? 0) / @(task.EstimatedHours ?? 0) hrs
+                                </div>
+                                <a asp-action="Detail" asp-route-id="@task.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3">Open Task</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

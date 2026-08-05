@@ -1,0 +1,50 @@
+﻿@model List<TaskPlatform.Shared.ViewModels.Task.TaskViewModel>
+@{
+    var project = ViewBag.Project as TaskPlatform.Shared.ViewModels.Project.ProjectViewModel;
+    ViewData["Title"] = $"{project?.Name ?? "Project"} — Gantt";
+}
+<link rel="stylesheet" href="https://unpkg.com/frappe-gantt@0.5.0/dist/frappe-gantt.css" />
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="fw-bold mb-1">Gantt Chart — @project?.Name</h3>
+            <p class="text-muted small mb-0">Timeline view of tasks</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" asp-route-projectId="@project?.Id" class="btn btn-outline-secondary rounded-pill px-3"><i class="bi bi-arrow-left"></i> Task Board</a>
+            <a asp-action="Create" asp-route-projectId="@project?.Id" class="btn btn-gradient rounded-pill px-3"><i class="bi bi-plus-lg"></i> New Task</a>
+        </div>
+    </div>
+
+    <div id="gantt-target" style="background:white; padding:12px; border-radius:8px;"></div>
+</div>
+
+<script src="https://unpkg.com/frappe-gantt@0.5.0/dist/frappe-gantt.min.js"></script>
+<script>
+    // Build tasks for Frappe Gantt
+    const tasks = [
+        @foreach (var t in Model)
+        {
+                var start = (t.StartDate ?? t.CreatedAt).ToString("yyyy-MM-dd");
+                var end = (t.DueDate ?? t.StartDate ?? t.CreatedAt).ToString("yyyy-MM-dd");
+                var progress = t.Status == "Completed" ? 100 : (t.Status == "InProgress" ? 50 : 0);
+                <text>{
+                    id: "@t.Id",
+                    name: "@(t.Title?.Replace("\"", "\\\"").Replace("\r", " ").Replace("\n", " "))",
+                    start: "@start",
+                    end: "@end",
+                    progress: @progress,
+                    custom_class: "@(t.Status?.ToLower() ?? "todo")"
+                },</text>
+        }
+    ];
+
+    const gantt = new Gantt("#gantt-target", tasks, {
+        popup_trigger: 'click',
+        on_click: (task) => {
+            // navigate to task detail
+            window.location.href = '/Task/Detail?id=' + task.id;
+        },
+        view_mode: 'Week'
+    });
+</script>

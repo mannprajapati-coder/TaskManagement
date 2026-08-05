@@ -1,0 +1,21 @@
+@model TaskPlatform.Shared.ViewModels.Auth.MfaSetupResponseViewModel
+@{
+    ViewData["Title"] = "Setup Two-Factor Authentication";
+}
+
+<div class="auth-wrapper">
+    <div class="auth-card text-center">
+        <div class="mb-3 text-primary">
+            <i class="bi bi-qr-code-scan" style="font-size: 3rem;"></i>
+        </div>
+        <h3 class="fw-bold text-dark mb-1">Setup 2FA</h3>
+        <p class="text-muted small mb-4">Scan this QR code with Google Authenticator or Microsoft Authenticator</p>
+
+        <div class="p-3 bg-light rounded-3 border d-inline-block mb-3">
+            <code class="fs-6 fw-bold text-dark selectable">@Model.SharedSecret</code>
+        </div>
+        <p class="text-muted extra-small mb-4" style="font-size: 0.8rem;">Manual Entry Key: <strong>@Model.SharedSecret</strong></p>
+
+        <a asp-action="Login" class="btn btn-gradient w-100">Done Setting Up</a>
+    </div>
+</div>

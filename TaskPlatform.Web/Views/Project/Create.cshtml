@@ -1,0 +1,58 @@
+@model TaskPlatform.Shared.ViewModels.Project.CreateProjectRequestViewModel
+@{
+    ViewData["Title"] = "Create Project";
+}
+
+<div class="auth-wrapper py-4">
+    <div class="auth-card" style="max-width: 560px;">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-dark mb-1">Create New Project</h3>
+            <p class="text-muted small">Define project scope, schedule, and client details</p>
+        </div>
+
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="WorkspaceId" />
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label small fw-semibold">Project Name</label>
+                <input asp-for="Name" class="form-control" placeholder="e.g. Website Redesign 2026" required />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label small fw-semibold">Description</label>
+                <textarea asp-for="Description" class="form-control" rows="3" placeholder="Brief project summary..."></textarea>
+                <span asp-validation-for="Description" class="text-danger small"></span>
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                    <label asp-for="StartDate" class="form-label small fw-semibold">Start Date</label>
+                    <input type="date" asp-for="StartDate" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="EndDate" class="form-label small fw-semibold">End Date</label>
+                    <input type="date" asp-for="EndDate" class="form-control" />
+                </div>
+            </div>
+
+            <div class="row g-2 mb-4">
+                <div class="col-md-6">
+                    <label asp-for="Budget" class="form-label small fw-semibold">Budget ($)</label>
+                    <input type="number" step="0.01" asp-for="Budget" class="form-control" placeholder="e.g. 15000" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Client" class="form-label small fw-semibold">Client Name</label>
+                    <input asp-for="Client" class="form-control" placeholder="e.g. Acme Corp" />
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <a asp-action="Index" asp-route-workspaceId="@Model.WorkspaceId" class="btn btn-outline-secondary w-50">Cancel</a>
+                <button type="submit" class="btn btn-gradient w-50">Create Project <i class="bi bi-check-lg"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
