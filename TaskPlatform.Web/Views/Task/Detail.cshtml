@@ -37,7 +37,9 @@
                         <div class="col-md-3">
                             <div class="p-3 bg-light rounded-3">
                                 <span class="extra-small text-muted d-block">Status</span>
-                                <strong class="text-dark">@Model.Status</strong>
+                                <strong class="text-dark" id="statusDisplay">
+                                    <span class="badge @TaskStatusDisplay.GetBadgeClass(Model.Status) rounded-pill">@TaskStatusDisplay.GetLabel(Model.Status)</span>
+                                </strong>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -61,12 +63,12 @@
                     </div>
 
                     <h5 class="fw-bold mb-3">Update Status</h5>
-                    <form asp-action="UpdateStatus" method="post" class="d-flex gap-2 mb-4">
+                    <form id="statusForm" asp-action="UpdateStatus" method="post" class="d-flex gap-2 mb-4 align-items-center">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="TaskId" value="@Model.Id" />
                         <input type="hidden" name="projectId" value="@Model.ProjectId" />
 
-                        <select name="Status" class="form-select rounded-pill" style="max-width: 240px;">
+                        <select name="Status" id="statusSelect" class="form-select rounded-pill" style="max-width: 240px;">
                             <option value="Todo" selected="@(Model.Status == "Todo")">Todo</option>
                             <option value="InProgress" selected="@(Model.Status == "InProgress")">In Progress</option>
                             <option value="InReview" selected="@(Model.Status == "InReview")">In Review</option>
@@ -74,6 +76,7 @@
                             <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
                         </select>
                         <button type="submit" class="btn btn-gradient rounded-pill px-4">Update Status</button>
+                        <span id="statusUpdateFeedback" class="extra-small text-success d-none"><i class="bi bi-check-circle-fill me-1"></i>Updated</span>
                     </form>
 
                     <div class="d-flex justify-content-end">
@@ -101,7 +104,7 @@
                                     <div>
                                         <span class="fw-semibold @(st.Status == "Completed" ? "text-decoration-line-through text-muted" : "text-dark")">@st.Title</span>
                                     </div>
-                                    <span class="badge @(st.Status == "Completed" ? "bg-success-subtle text-success border border-success" : "bg-light text-dark border") rounded-pill">@st.Status</span>
+                                    <span class="badge @TaskStatusDisplay.GetBadgeClass(st.Status) rounded-pill">@TaskStatusDisplay.GetLabel(st.Status)</span>
                                 </li>
                             }
                         </ul>
@@ -121,3 +124,58 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var form = document.getElementById('statusForm');
+            var select = document.getElementById('statusSelect');
+            var statusDisplay = document.getElementById('statusDisplay');
+            var feedback = document.getElementById('statusUpdateFeedback');
+            var csrfToken = document.querySelector('meta[name="request-verification-token"]')?.getAttribute('content') || '';
+
+            var badgeClasses = {
+                Completed: 'bg-success-subtle text-success border border-success',
+                InProgress: 'bg-primary-subtle text-primary border border-primary',
+                InReview: 'bg-warning-subtle text-dark border border-warning',
+                Cancelled: 'bg-secondary-subtle text-secondary border border-secondary',
+                Todo: 'bg-light text-dark border'
+            };
+            var labels = { InProgress: 'In Progress', InReview: 'In Review' };
+
+            if (!form || !select) {
+                return;
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                fetch('@Url.Action("UpdateStatusAjax", "Task")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({ TaskId: '@Model.Id', Status: select.value })
+                }).then(function (res) {
+                    if (!res.ok) {
+                        throw new Error('Request failed');
+                    }
+                    return res.json();
+                }).then(function (result) {
+                    if (result.success) {
+                        var status = result.status || select.value;
+                        statusDisplay.innerHTML = '<span class="badge ' + (badgeClasses[status] || 'bg-light text-dark border') + ' rounded-pill">' + (labels[status] || status) + '</span>';
+                        feedback.classList.remove('d-none');
+                        setTimeout(function () { feedback.classList.add('d-none'); }, 2000);
+                    } else {
+                        alert(result.message || 'Could not update status.');
+                        form.submit();
+                    }
+                }).catch(function () {
+                    form.submit();
+                });
+            });
+        })();
+    </script>
+}

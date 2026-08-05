@@ -36,7 +36,8 @@ namespace Modules.Tasks.Application.Services
             }
 
             var tasks = await query
-                .OrderByDescending(t => t.CreatedAt)
+                .OrderBy(t => t.SortOrder)
+                .ThenByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
             return tasks.Select(MapToViewModel).ToList();
@@ -57,6 +58,9 @@ namespace Modules.Tasks.Application.Services
         {
             ValidateTaskDates(model.StartDate, model.DueDate);
 
+            var sortOrder = await _dbContext.Tasks
+                .CountAsync(t => t.ProjectId == model.ProjectId && t.Status == "Todo" && t.ParentTaskId == null);
+
             var task = new TaskEntity
             {
                 Id = Guid.NewGuid(),
@@ -64,6 +68,7 @@ namespace Modules.Tasks.Application.Services
                 Title = model.Title,
                 Description = model.Description,
                 Status = "Todo",
+                SortOrder = sortOrder,
                 Priority = string.IsNullOrEmpty(model.Priority) ? "Medium" : model.Priority,
                 StartDate = model.StartDate,
                 DueDate = model.DueDate,
@@ -168,7 +173,48 @@ namespace Modules.Tasks.Application.Services
                 throw new DomainException("Task not found.");
             }
 
-            if (model.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
+            if (!task.Status.Equals(model.Status, StringComparison.OrdinalIgnoreCase))
+            {
+                await ApplyStatusChangeAsync(task, model.Status);
+            }
+
+            await _dbContext.SaveChangesAsync();
+            return MapToViewModel(task);
+        }
+
+        public async Task<TaskViewModel> ReorderTasksAsync(Guid userId, ReorderTasksRequestViewModel model)
+        {
+            var task = await _dbContext.Tasks.FindAsync(model.TaskId);
+            if (task == null)
+            {
+                throw new DomainException("Task not found.");
+            }
+
+            if (!task.Status.Equals(model.Status, StringComparison.OrdinalIgnoreCase))
+            {
+                await ApplyStatusChangeAsync(task, model.Status);
+            }
+
+            var columnTasks = await _dbContext.Tasks
+                .Where(t => model.OrderedTaskIds.Contains(t.Id))
+                .ToListAsync();
+
+            for (var i = 0; i < model.OrderedTaskIds.Count; i++)
+            {
+                var columnTask = columnTasks.FirstOrDefault(t => t.Id == model.OrderedTaskIds[i]);
+                if (columnTask != null)
+                {
+                    columnTask.SortOrder = i;
+                }
+            }
+
+            await _dbContext.SaveChangesAsync();
+            return MapToViewModel(task);
+        }
+
+        private async Task ApplyStatusChangeAsync(TaskEntity task, string newStatus)
+        {
+            if (newStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase))
             {
                 var incompleteSubtasksExist = await _dbContext.Tasks
                     .AnyAsync(st => st.ParentTaskId == task.Id &&
@@ -190,11 +236,14 @@ namespace Modules.Tasks.Application.Services
                 task.CompletedAt = null;
             }
 
-            task.Status = model.Status;
-            task.UpdatedAt = DateTime.UtcNow;
+            var maxSortOrder = await _dbContext.Tasks
+                .Where(t => t.ProjectId == task.ProjectId && t.Status == newStatus && t.ParentTaskId == null && t.Id != task.Id)
+                .Select(t => (int?)t.SortOrder)
+                .MaxAsync();
 
-            await _dbContext.SaveChangesAsync();
-            return MapToViewModel(task);
+            task.Status = newStatus;
+            task.SortOrder = (maxSortOrder ?? -1) + 1;
+            task.UpdatedAt = DateTime.UtcNow;
         }
 
         public async Task<bool> DeleteTaskAsync(Guid userId, Guid taskId)
@@ -603,6 +652,7 @@ namespace Modules.Tasks.Application.Services
                 Title = t.Title,
                 Description = t.Description,
                 Status = t.Status,
+                SortOrder = t.SortOrder,
                 Priority = t.Priority,
                 StartDate = t.StartDate,
                 DueDate = t.DueDate,

@@ -60,6 +60,14 @@ namespace TaskPlatform.Api.Controllers
             return Ok(ApiResponse<TaskViewModel>.Ok(result, "Task status updated."));
         }
 
+        [HttpPut("Reorder")]
+        public async Task<ActionResult<ApiResponse<TaskViewModel>>> Reorder([FromBody] ReorderTasksRequestViewModel model)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _tasksService.ReorderTasksAsync(userId, model);
+            return Ok(ApiResponse<TaskViewModel>.Ok(result, "Tasks reordered."));
+        }
+
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse<bool>>> Delete(Guid id)
         {

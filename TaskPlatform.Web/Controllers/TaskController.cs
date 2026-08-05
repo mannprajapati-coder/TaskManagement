@@ -138,6 +138,24 @@ namespace TaskPlatform.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStatusAjax([FromBody] UpdateTaskStatusRequestViewModel model)
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.UpdateTaskStatusAsync(model, token);
+            return Json(new { success = response.Success, message = response.Message, status = response.Data?.Status });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reorder([FromBody] ReorderTasksRequestViewModel model)
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.ReorderTasksAsync(model, token);
+            return Json(new { success = response.Success, message = response.Message });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateSubtask(CreateSubtaskRequestViewModel model)
         {
             var token = GetAccessToken();

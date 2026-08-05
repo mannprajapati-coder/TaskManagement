@@ -29,3 +29,54 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+.hover-shadow {
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+
+.hover-shadow:hover {
+  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .08) !important;
+  transform: translateY(-2px);
+}
+
+.transition {
+  transition: all .2s ease;
+}
+
+.extra-small {
+  font-size: .75rem;
+}
+
+.badge-sm {
+  font-size: .7rem;
+}
+
+/* Kanban board */
+.kanban-board {
+  overflow-x: auto;
+  padding-bottom: .5rem;
+}
+
+.kanban-column {
+  flex: 0 0 300px;
+  width: 300px;
+}
+
+.kanban-column-body {
+  min-height: 120px;
+}
+
+.kanban-column-body.drag-over {
+  background: rgba(99, 102, 241, .06);
+  outline: 2px dashed rgba(99, 102, 241, .4);
+  outline-offset: -4px;
+  border-radius: .75rem;
+}
+
+.task-card {
+  cursor: grab;
+}
+
+.task-card.dragging {
+  opacity: .4;
+}

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace TaskPlatform.Shared.ViewModels.Task
@@ -10,6 +11,7 @@ namespace TaskPlatform.Shared.ViewModels.Task
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string Status { get; set; } = "Todo"; // Todo, InProgress, InReview, Completed, Cancelled
+        public int SortOrder { get; set; }
         public string Priority { get; set; } = "Medium"; // Low, Medium, High, Urgent
         public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
@@ -77,5 +79,17 @@ namespace TaskPlatform.Shared.ViewModels.Task
 
         [Required]
         public string Status { get; set; } = "Todo";
+    }
+
+    public class ReorderTasksRequestViewModel
+    {
+        [Required]
+        public Guid TaskId { get; set; }
+
+        [Required]
+        public string Status { get; set; } = "Todo";
+
+        [Required]
+        public List<Guid> OrderedTaskIds { get; set; } = new();
     }
 }

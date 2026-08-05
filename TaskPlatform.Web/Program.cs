@@ -10,6 +10,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add MVC services
 builder.Services.AddControllersWithViews();
 
+// Allow antiforgery validation via header for AJAX/JSON requests (drag-and-drop board)
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+});
+
 // Configure Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

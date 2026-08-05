@@ -50,12 +50,12 @@
         </div>
     </div>
 
-    <!-- Task Engine Placeholder (Coming in Sprint 04) -->
-    <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+    <div class="card border-0 shadow-sm rounded-4 text-center py-5 hover-shadow transition">
         <div class="card-body">
             <i class="bi bi-kanban text-primary display-4 mb-3"></i>
-            <h5 class="fw-bold">Task Management Engine</h5>
-            <p class="text-muted small">Task status workflows, priority boards, and hour tracking wire in Sprint 04!</p>
+            <h5 class="fw-bold">Task Board</h5>
+            <p class="text-muted small mb-3">Drag and drop tasks across Todo, In Progress, In Review, Completed and Cancelled columns.</p>
+            <a asp-controller="Task" asp-action="Index" asp-route-projectId="@Model.Id" class="btn btn-gradient rounded-pill px-4">Go to Task Board</a>
         </div>
     </div>
 </div>

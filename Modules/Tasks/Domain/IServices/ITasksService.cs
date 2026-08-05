@@ -12,6 +12,7 @@ namespace Modules.Tasks.Domain.IServices
         Task<TaskViewModel> CreateTaskAsync(Guid userId, CreateTaskRequestViewModel model);
         Task<TaskViewModel> UpdateTaskAsync(Guid userId, UpdateTaskRequestViewModel model);
         Task<TaskViewModel> UpdateTaskStatusAsync(Guid userId, UpdateTaskStatusRequestViewModel model);
+        Task<TaskViewModel> ReorderTasksAsync(Guid userId, ReorderTasksRequestViewModel model);
         Task<bool> DeleteTaskAsync(Guid userId, Guid taskId);
 
         // Sprint 05: Subtasks

@@ -68,6 +68,7 @@ namespace TaskPlatform.Shared.ApiService
         Task<ApiResponse<TaskViewModel>> CreateTaskAsync(CreateTaskRequestViewModel model, string accessToken);
         Task<ApiResponse<TaskViewModel>> UpdateTaskAsync(UpdateTaskRequestViewModel model, string accessToken);
         Task<ApiResponse<TaskViewModel>> UpdateTaskStatusAsync(UpdateTaskStatusRequestViewModel model, string accessToken);
+        Task<ApiResponse<TaskViewModel>> ReorderTasksAsync(ReorderTasksRequestViewModel model, string accessToken);
         Task<ApiResponse<bool>> DeleteTaskAsync(string taskId, string accessToken);
 
         // Subtasks & Task Assignment

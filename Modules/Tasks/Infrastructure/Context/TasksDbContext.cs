@@ -28,6 +28,7 @@ namespace Modules.Tasks.Infrastructure.Context
                 entity.HasIndex(t => t.PrimaryAssigneeUserId);
                 entity.HasIndex(t => t.ParentTaskId);
                 entity.HasIndex(t => t.Status);
+                entity.HasIndex(t => new { t.ProjectId, t.Status, t.SortOrder });
                 entity.Property(t => t.EstimatedHours).HasPrecision(18, 2);
                 entity.Property(t => t.ActualHours).HasPrecision(18, 2);
 

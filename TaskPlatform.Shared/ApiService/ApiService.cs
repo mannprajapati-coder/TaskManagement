@@ -258,6 +258,11 @@ namespace TaskPlatform.Shared.ApiService
             return await PutWithTokenAsync<UpdateTaskStatusRequestViewModel, TaskViewModel>("api/v1/Tasks/UpdateStatus", model, accessToken);
         }
 
+        public async Task<ApiResponse<TaskViewModel>> ReorderTasksAsync(ReorderTasksRequestViewModel model, string accessToken)
+        {
+            return await PutWithTokenAsync<ReorderTasksRequestViewModel, TaskViewModel>("api/v1/Tasks/Reorder", model, accessToken);
+        }
+
         public async Task<ApiResponse<bool>> DeleteTaskAsync(string taskId, string accessToken)
         {
             return await DeleteWithTokenAsync<bool>($"api/v1/Tasks/{taskId}", accessToken);

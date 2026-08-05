@@ -10,6 +10,7 @@ namespace Modules.Tasks.Domain.Entities
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string Status { get; set; } = "Todo"; // Todo, InProgress, InReview, Completed, Cancelled
+        public int SortOrder { get; set; }
         public string Priority { get; set; } = "Medium"; // Low, Medium, High, Urgent
         public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
