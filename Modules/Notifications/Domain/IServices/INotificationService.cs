@@ -13,7 +13,7 @@ namespace Modules.Notifications.Domain.IServices
         Task<bool> LogActivityAsync(Guid actorUserId, CreateActivityLogRequestViewModel model);
 
         Task<List<NotificationItemViewModel>> GetUserNotificationsAsync(Guid userId, bool unreadOnly = false);
-        Task<bool> SendNotificationAsync(SendNotificationRequestViewModel model);
+        Task<NotificationItemViewModel> SendNotificationAsync(SendNotificationRequestViewModel model);
         Task<bool> MarkAsReadAsync(Guid userId, Guid notificationId);
         Task<bool> MarkAllAsReadAsync(Guid userId);
     }

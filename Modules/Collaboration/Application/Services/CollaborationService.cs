@@ -28,18 +28,28 @@ namespace Modules.Collaboration.Application.Services
                 .OrderBy(c => c.CreatedAt)
                 .ToListAsync();
 
+            var userLookup = await GetUserLookupAsync(comments.Select(c => c.UserId));
+
             return comments.Select(c => new CommentViewModel
             {
                 Id = c.Id,
                 TaskId = c.TaskId,
                 UserId = c.UserId,
-                AuthorName = "Comment Author",
+                AuthorName = userLookup.TryGetValue(c.UserId, out var u) ? u.FullName : "Unknown User",
                 CommentText = c.CommentText,
                 MentionedUserIds = string.IsNullOrEmpty(c.MentionedUserIdsJson)
                     ? new List<string>()
                     : JsonSerializer.Deserialize<List<string>>(c.MentionedUserIdsJson) ?? new List<string>(),
                 CreatedAt = c.CreatedAt
             }).ToList();
+        }
+
+        private async Task<Dictionary<Guid, UserLookup>> GetUserLookupAsync(IEnumerable<Guid> userIds)
+        {
+            var distinctIds = userIds.Distinct().ToList();
+            return await _dbContext.UserLookups
+                .Where(u => distinctIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id);
         }
 
         public async Task<CommentViewModel> AddTaskCommentAsync(Guid userId, AddCommentRequestViewModel model)
@@ -66,12 +76,14 @@ namespace Modules.Collaboration.Application.Services
             _dbContext.TaskComments.Add(comment);
             await _dbContext.SaveChangesAsync();
 
+            var author = await _dbContext.UserLookups.FirstOrDefaultAsync(u => u.Id == userId);
+
             return new CommentViewModel
             {
                 Id = comment.Id,
                 TaskId = comment.TaskId,
                 UserId = comment.UserId,
-                AuthorName = "Comment Author",
+                AuthorName = author?.FullName ?? "Unknown User",
                 CommentText = comment.CommentText,
                 MentionedUserIds = model.MentionedUserIds ?? new List<string>(),
                 CreatedAt = comment.CreatedAt
@@ -83,6 +95,11 @@ namespace Modules.Collaboration.Application.Services
             var comment = await _dbContext.TaskComments.FindAsync(commentId);
             if (comment != null)
             {
+                if (comment.UserId != userId)
+                {
+                    throw new DomainException("You can only delete your own comments.");
+                }
+
                 _dbContext.TaskComments.Remove(comment);
                 await _dbContext.SaveChangesAsync();
             }
@@ -96,6 +113,8 @@ namespace Modules.Collaboration.Application.Services
                 .OrderByDescending(a => a.UploadedAt)
                 .ToListAsync();
 
+            var userLookup = await GetUserLookupAsync(attachments.Select(a => a.UploadedByUserId));
+
             return attachments.Select(a => new AttachmentViewModel
             {
                 Id = a.Id,
@@ -105,7 +124,7 @@ namespace Modules.Collaboration.Application.Services
                 FileSize = a.FileSize,
                 ContentType = a.ContentType,
                 UploadedByUserId = a.UploadedByUserId,
-                UploadedByName = "Uploader",
+                UploadedByName = userLookup.TryGetValue(a.UploadedByUserId, out var u) ? u.FullName : "Unknown User",
                 UploadedAt = a.UploadedAt
             }).ToList();
         }
@@ -127,6 +146,8 @@ namespace Modules.Collaboration.Application.Services
             _dbContext.TaskAttachments.Add(attachment);
             await _dbContext.SaveChangesAsync();
 
+            var uploader = await _dbContext.UserLookups.FirstOrDefaultAsync(u => u.Id == userId);
+
             return new AttachmentViewModel
             {
                 Id = attachment.Id,
@@ -136,7 +157,7 @@ namespace Modules.Collaboration.Application.Services
                 FileSize = attachment.FileSize,
                 ContentType = attachment.ContentType,
                 UploadedByUserId = attachment.UploadedByUserId,
-                UploadedByName = "Uploader",
+                UploadedByName = uploader?.FullName ?? "Unknown User",
                 UploadedAt = attachment.UploadedAt
             };
         }

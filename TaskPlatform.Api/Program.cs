@@ -1,5 +1,6 @@
 using System;
 using System.Threading.RateLimiting;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.RateLimiting;
@@ -15,6 +16,7 @@ using Modules.Projects.Application.Extensions;
 using Modules.Tasks.Application.Extensions;
 using Modules.UserManagement.Application.Extensions;
 using Modules.Workspaces.Application.Extensions;
+using TaskPlatform.Api.Hubs;
 using TaskPlatform.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,6 +60,17 @@ builder.Services.AddTasksModule(builder.Configuration);
 builder.Services.AddCollaborationModule(builder.Configuration);
 builder.Services.AddNotificationsModule(builder.Configuration);
 
+// Real-time notifications
+builder.Services.AddSignalR();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("WebClient", policy => policy
+        .WithOrigins("https://localhost:7203", "http://localhost:5190")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
+});
+
 // Configure Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
@@ -88,6 +101,21 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = false,
         ClockSkew = TimeSpan.FromSeconds(5)
     };
+
+    // SignalR's WebSocket/SSE transports can't send an Authorization header, so the
+    // browser passes the JWT via query string for hub connections specifically.
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 builder.Services.AddAuthorization();
@@ -105,12 +133,15 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors("WebClient");
+
 app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<NotificationsHub>("/hubs/notifications");
 
 app.Run();
 

@@ -12,6 +12,7 @@ namespace Modules.Collaboration.Infrastructure.Context
 
         public DbSet<TaskComment> TaskComments => Set<TaskComment>();
         public DbSet<TaskAttachment> TaskAttachments => Set<TaskAttachment>();
+        public DbSet<UserLookup> UserLookups => Set<UserLookup>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,6 +30,12 @@ namespace Modules.Collaboration.Infrastructure.Context
                 entity.ToTable("TaskAttachments");
                 entity.HasKey(a => a.Id);
                 entity.HasIndex(a => a.TaskId);
+            });
+
+            modelBuilder.Entity<UserLookup>(entity =>
+            {
+                entity.ToTable("Users", t => t.ExcludeFromMigrations());
+                entity.HasKey(u => u.Id);
             });
         }
     }

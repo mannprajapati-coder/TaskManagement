@@ -40,7 +40,11 @@ namespace Modules.Tasks.Application.Services
                 .ThenByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
-            return tasks.Select(MapToViewModel).ToList();
+            var userLookup = await GetUserLookupAsync(tasks
+                .Where(t => t.PrimaryAssigneeUserId.HasValue)
+                .Select(t => t.PrimaryAssigneeUserId!.Value));
+
+            return tasks.Select(t => MapToViewModel(t, userLookup)).ToList();
         }
 
         public async Task<TaskViewModel> GetTaskByIdAsync(Guid taskId)
@@ -51,7 +55,7 @@ namespace Modules.Tasks.Application.Services
                 throw new DomainException("Task not found.");
             }
 
-            return MapToViewModel(task);
+            return await MapSingleToViewModelAsync(task);
         }
 
         public async Task<TaskViewModel> CreateTaskAsync(Guid userId, CreateTaskRequestViewModel model)
@@ -97,7 +101,7 @@ namespace Modules.Tasks.Application.Services
 
             await _dbContext.SaveChangesAsync();
 
-            return MapToViewModel(task);
+            return await MapSingleToViewModelAsync(task);
         }
 
         public async Task<TaskViewModel> UpdateTaskAsync(Guid userId, UpdateTaskRequestViewModel model)
@@ -162,7 +166,7 @@ namespace Modules.Tasks.Application.Services
             }
 
             await _dbContext.SaveChangesAsync();
-            return MapToViewModel(task);
+            return await MapSingleToViewModelAsync(task);
         }
 
         public async Task<TaskViewModel> UpdateTaskStatusAsync(Guid userId, UpdateTaskStatusRequestViewModel model)
@@ -179,7 +183,7 @@ namespace Modules.Tasks.Application.Services
             }
 
             await _dbContext.SaveChangesAsync();
-            return MapToViewModel(task);
+            return await MapSingleToViewModelAsync(task);
         }
 
         public async Task<TaskViewModel> ReorderTasksAsync(Guid userId, ReorderTasksRequestViewModel model)
@@ -209,7 +213,7 @@ namespace Modules.Tasks.Application.Services
             }
 
             await _dbContext.SaveChangesAsync();
-            return MapToViewModel(task);
+            return await MapSingleToViewModelAsync(task);
         }
 
         private async Task ApplyStatusChangeAsync(TaskEntity task, string newStatus)
@@ -348,16 +352,26 @@ namespace Modules.Tasks.Application.Services
                 .OrderByDescending(a => a.IsPrimary)
                 .ToListAsync();
 
+            var userLookup = await GetUserLookupAsync(assignees.Select(a => a.UserId));
+
             return assignees.Select(a => new TaskAssigneeViewModel
             {
                 Id = a.Id,
                 TaskId = a.TaskId,
                 UserId = a.UserId,
-                FullName = "Team Member",
-                Email = "member@taskplatform.com",
+                FullName = userLookup.TryGetValue(a.UserId, out var u) ? u.FullName : "Unknown User",
+                Email = userLookup.TryGetValue(a.UserId, out var u2) ? (u2.Email ?? string.Empty) : string.Empty,
                 IsPrimary = a.IsPrimary,
                 AssignedAt = a.AssignedAt
             }).ToList();
+        }
+
+        private async Task<Dictionary<Guid, UserLookup>> GetUserLookupAsync(IEnumerable<Guid> userIds)
+        {
+            var distinctIds = userIds.Distinct().ToList();
+            return await _dbContext.UserLookups
+                .Where(u => distinctIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id);
         }
 
         public async Task<TaskAssigneeViewModel> AddTaskAssigneeAsync(Guid userId, AddTaskAssigneeRequestViewModel model)
@@ -382,13 +396,15 @@ namespace Modules.Tasks.Application.Services
             _dbContext.TaskAssignees.Add(assignee);
             await _dbContext.SaveChangesAsync();
 
+            var assignedUser = await _dbContext.UserLookups.FirstOrDefaultAsync(u => u.Id == assignee.UserId);
+
             return new TaskAssigneeViewModel
             {
                 Id = assignee.Id,
                 TaskId = assignee.TaskId,
                 UserId = assignee.UserId,
-                FullName = "Team Member",
-                Email = "member@taskplatform.com",
+                FullName = assignedUser?.FullName ?? "Unknown User",
+                Email = assignedUser?.Email ?? string.Empty,
                 IsPrimary = assignee.IsPrimary,
                 AssignedAt = assignee.AssignedAt
             };
@@ -415,13 +431,15 @@ namespace Modules.Tasks.Application.Services
                 .OrderByDescending(w => w.WatchingSince)
                 .ToListAsync();
 
+            var userLookup = await GetUserLookupAsync(watchers.Select(w => w.UserId));
+
             return watchers.Select(w => new TaskWatcherViewModel
             {
                 Id = w.Id,
                 TaskId = w.TaskId,
                 UserId = w.UserId,
-                FullName = "Watcher User",
-                Email = "watcher@taskplatform.com",
+                FullName = userLookup.TryGetValue(w.UserId, out var u) ? u.FullName : "Unknown User",
+                Email = userLookup.TryGetValue(w.UserId, out var u2) ? (u2.Email ?? string.Empty) : string.Empty,
                 WatchingSince = w.WatchingSince
             }).ToList();
         }
@@ -643,8 +661,21 @@ namespace Modules.Tasks.Application.Services
             }
         }
 
-        private static TaskViewModel MapToViewModel(TaskEntity t)
+        private async Task<TaskViewModel> MapSingleToViewModelAsync(TaskEntity t)
         {
+            IReadOnlyDictionary<Guid, UserLookup> userLookup = t.PrimaryAssigneeUserId.HasValue
+                ? await GetUserLookupAsync(new[] { t.PrimaryAssigneeUserId.Value })
+                : new Dictionary<Guid, UserLookup>();
+
+            return MapToViewModel(t, userLookup);
+        }
+
+        private static TaskViewModel MapToViewModel(TaskEntity t, IReadOnlyDictionary<Guid, UserLookup> userLookup)
+        {
+            var primaryAssigneeName = t.PrimaryAssigneeUserId.HasValue
+                ? (userLookup.TryGetValue(t.PrimaryAssigneeUserId.Value, out var assignee) ? assignee.FullName : "Unknown User")
+                : "Unassigned";
+
             return new TaskViewModel
             {
                 Id = t.Id,
@@ -659,7 +690,7 @@ namespace Modules.Tasks.Application.Services
                 EstimatedHours = t.EstimatedHours,
                 ActualHours = t.ActualHours,
                 PrimaryAssigneeUserId = t.PrimaryAssigneeUserId,
-                PrimaryAssigneeName = t.PrimaryAssigneeUserId.HasValue ? "Assignee User" : "Unassigned",
+                PrimaryAssigneeName = primaryAssigneeName,
                 CreatorUserId = t.CreatorUserId,
                 CompletedAt = t.CompletedAt,
                 CreatedAt = t.CreatedAt,

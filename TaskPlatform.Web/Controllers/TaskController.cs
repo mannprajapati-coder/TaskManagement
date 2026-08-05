@@ -1,8 +1,14 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TaskPlatform.Shared.ApiService;
+using TaskPlatform.Shared.ViewModels.Collaboration;
+using TaskPlatform.Shared.ViewModels.Project;
 using TaskPlatform.Shared.ViewModels.Task;
 
 namespace TaskPlatform.Web.Controllers
@@ -10,11 +16,15 @@ namespace TaskPlatform.Web.Controllers
     [Authorize]
     public class TaskController : Controller
     {
-        private readonly IApiService _apiService;
+        private const long MaxAttachmentSizeBytes = 25 * 1024 * 1024;
 
-        public TaskController(IApiService apiService)
+        private readonly IApiService _apiService;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+
+        public TaskController(IApiService apiService, IWebHostEnvironment webHostEnvironment)
         {
             _apiService = apiService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpGet]
@@ -109,10 +119,20 @@ namespace TaskPlatform.Web.Controllers
             var subtasksResp = await _apiService.GetSubtasksAsync(id, token);
             var assigneesResp = await _apiService.GetTaskAssigneesAsync(id, token);
             var watchersResp = await _apiService.GetTaskWatchersAsync(id, token);
+            var checklistResp = await _apiService.GetChecklistItemsAsync(id, token);
+            var recurringResp = await _apiService.GetRecurringTaskRuleAsync(id, token);
+            var commentsResp = await _apiService.GetTaskCommentsAsync(id, token);
+            var attachmentsResp = await _apiService.GetTaskAttachmentsAsync(id, token);
+            var membersResp = await _apiService.GetProjectMembersAsync(response.Data.ProjectId.ToString(), token);
 
-            ViewBag.Subtasks = subtasksResp.Data ?? new System.Collections.Generic.List<SubtaskViewModel>();
-            ViewBag.Assignees = assigneesResp.Data ?? new System.Collections.Generic.List<TaskAssigneeViewModel>();
-            ViewBag.Watchers = watchersResp.Data ?? new System.Collections.Generic.List<TaskWatcherViewModel>();
+            ViewBag.Subtasks = subtasksResp.Data ?? new List<SubtaskViewModel>();
+            ViewBag.Assignees = assigneesResp.Data ?? new List<TaskAssigneeViewModel>();
+            ViewBag.Watchers = watchersResp.Data ?? new List<TaskWatcherViewModel>();
+            ViewBag.ChecklistItems = checklistResp.Data ?? new List<ChecklistItemViewModel>();
+            ViewBag.RecurringRule = recurringResp.Success ? recurringResp.Data : null;
+            ViewBag.Comments = commentsResp.Data ?? new List<CommentViewModel>();
+            ViewBag.Attachments = attachmentsResp.Data ?? new List<AttachmentViewModel>();
+            ViewBag.ProjectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
 
             return View(response.Data);
         }
@@ -209,6 +229,219 @@ namespace TaskPlatform.Web.Controllers
             }
 
             return RedirectToAction(nameof(Index), new { projectId = projectId });
+        }
+
+        // Checklist
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddChecklistItem(AddChecklistItemRequestViewModel model)
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.AddChecklistItemAsync(model, token);
+
+            if (!response.Success)
+            {
+                TempData["ErrorMessage"] = response.Message;
+            }
+
+            return RedirectToAction(nameof(Detail), new { id = model.TaskId });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ToggleChecklistItemAjax(Guid id)
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.ToggleChecklistItemAsync(id.ToString(), token);
+            return Json(new { success = response.Success, message = response.Message });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteChecklistItemAjax(Guid id)
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.DeleteChecklistItemAsync(id.ToString(), token);
+            return Json(new { success = response.Success, message = response.Message });
+        }
+
+        // Recurring Rule
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetRecurringRule(SetRecurringTaskRuleRequestViewModel model)
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.SetRecurringTaskRuleAsync(model, token);
+
+            if (response.Success)
+            {
+                TempData["SuccessMessage"] = "Recurring rule saved.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = response.Message;
+            }
+
+            return RedirectToAction(nameof(Detail), new { id = model.TaskId });
+        }
+
+        // Assignees
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddAssignee(AddTaskAssigneeRequestViewModel model)
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.AddTaskAssigneeAsync(model, token);
+
+            if (!response.Success)
+            {
+                TempData["ErrorMessage"] = response.Message;
+            }
+
+            return RedirectToAction(nameof(Detail), new { id = model.TaskId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveAssignee(Guid taskId, Guid targetUserId)
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.RemoveTaskAssigneeAsync(taskId.ToString(), targetUserId.ToString(), token);
+
+            if (!response.Success)
+            {
+                TempData["ErrorMessage"] = response.Message;
+            }
+
+            return RedirectToAction(nameof(Detail), new { id = taskId });
+        }
+
+        // Comments
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddComment(AddCommentRequestViewModel model)
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.AddTaskCommentAsync(model, token);
+
+            if (!response.Success)
+            {
+                TempData["ErrorMessage"] = response.Message;
+            }
+
+            return RedirectToAction(nameof(Detail), new { id = model.TaskId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteComment(Guid id, Guid taskId)
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.DeleteTaskCommentAsync(id.ToString(), token);
+
+            if (!response.Success)
+            {
+                TempData["ErrorMessage"] = response.Message;
+            }
+
+            return RedirectToAction(nameof(Detail), new { id = taskId });
+        }
+
+        // Attachments
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadAttachment(Guid taskId, IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                TempData["ErrorMessage"] = "Please choose a file to upload.";
+                return RedirectToAction(nameof(Detail), new { id = taskId });
+            }
+
+            if (file.Length > MaxAttachmentSizeBytes)
+            {
+                TempData["ErrorMessage"] = "File is too large. Maximum size is 25 MB.";
+                return RedirectToAction(nameof(Detail), new { id = taskId });
+            }
+
+            var storedFileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+            var relativeDir = Path.Combine("uploads", taskId.ToString());
+            var absoluteDir = Path.Combine(_webHostEnvironment.WebRootPath, relativeDir);
+            Directory.CreateDirectory(absoluteDir);
+
+            var absolutePath = Path.Combine(absoluteDir, storedFileName);
+            using (var stream = new FileStream(absolutePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var relativePath = "/" + Path.Combine(relativeDir, storedFileName).Replace('\\', '/');
+
+            var token = GetAccessToken();
+            var response = await _apiService.AddTaskAttachmentAsync(
+                taskId.ToString(), file.FileName, relativePath, file.Length,
+                string.IsNullOrEmpty(file.ContentType) ? "application/octet-stream" : file.ContentType, token);
+
+            if (!response.Success)
+            {
+                TempData["ErrorMessage"] = response.Message;
+            }
+
+            return RedirectToAction(nameof(Detail), new { id = taskId });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadAttachment(Guid id, Guid taskId)
+        {
+            var token = GetAccessToken();
+            var attachmentsResp = await _apiService.GetTaskAttachmentsAsync(taskId.ToString(), token);
+            var attachment = attachmentsResp.Data?.Find(a => a.Id == id);
+
+            if (attachment == null)
+            {
+                TempData["ErrorMessage"] = "Attachment not found.";
+                return RedirectToAction(nameof(Detail), new { id = taskId });
+            }
+
+            var physicalPath = Path.Combine(_webHostEnvironment.WebRootPath, attachment.FilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (!System.IO.File.Exists(physicalPath))
+            {
+                TempData["ErrorMessage"] = "The file could not be found on disk.";
+                return RedirectToAction(nameof(Detail), new { id = taskId });
+            }
+
+            return PhysicalFile(physicalPath, attachment.ContentType, attachment.FileName);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAttachment(Guid id, Guid taskId)
+        {
+            var token = GetAccessToken();
+            var attachmentsResp = await _apiService.GetTaskAttachmentsAsync(taskId.ToString(), token);
+            var attachment = attachmentsResp.Data?.Find(a => a.Id == id);
+
+            var response = await _apiService.DeleteTaskAttachmentAsync(id.ToString(), token);
+
+            if (response.Success && attachment != null)
+            {
+                var physicalPath = Path.Combine(_webHostEnvironment.WebRootPath, attachment.FilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                try
+                {
+                    if (System.IO.File.Exists(physicalPath))
+                    {
+                        System.IO.File.Delete(physicalPath);
+                    }
+                }
+                catch
+                {
+                    // Best-effort cleanup; the DB row (source of truth) is already removed.
+                }
+            }
+            else if (!response.Success)
+            {
+                TempData["ErrorMessage"] = response.Message;
+            }
+
+            return RedirectToAction(nameof(Detail), new { id = taskId });
         }
 
         private string GetAccessToken() => User.FindFirst("AccessToken")?.Value ?? string.Empty;

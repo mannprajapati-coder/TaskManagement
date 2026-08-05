@@ -97,7 +97,7 @@ namespace Modules.Notifications.Application.Services
             }).ToList();
         }
 
-        public async Task<bool> SendNotificationAsync(SendNotificationRequestViewModel model)
+        public async Task<NotificationItemViewModel> SendNotificationAsync(SendNotificationRequestViewModel model)
         {
             var item = new NotificationItem
             {
@@ -112,7 +112,17 @@ namespace Modules.Notifications.Application.Services
 
             _dbContext.Notifications.Add(item);
             await _dbContext.SaveChangesAsync();
-            return true;
+
+            return new NotificationItemViewModel
+            {
+                Id = item.Id,
+                UserId = item.UserId,
+                Title = item.Title,
+                Message = item.Message,
+                LinkUrl = item.LinkUrl,
+                IsRead = item.IsRead,
+                CreatedAt = item.CreatedAt
+            };
         }
 
         public async Task<bool> MarkAsReadAsync(Guid userId, Guid notificationId)

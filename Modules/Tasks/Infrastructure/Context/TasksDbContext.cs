@@ -15,6 +15,8 @@ namespace Modules.Tasks.Infrastructure.Context
         public DbSet<TaskWatcher> TaskWatchers => Set<TaskWatcher>();
         public DbSet<ChecklistItem> ChecklistItems => Set<ChecklistItem>();
         public DbSet<RecurringTaskRule> RecurringTaskRules => Set<RecurringTaskRule>();
+        public DbSet<UserLookup> UserLookups => Set<UserLookup>();
+        public DbSet<ProjectLookup> ProjectLookups => Set<ProjectLookup>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -80,6 +82,18 @@ namespace Modules.Tasks.Infrastructure.Context
                       .WithMany()
                       .HasForeignKey(r => r.TaskId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UserLookup>(entity =>
+            {
+                entity.ToTable("Users", t => t.ExcludeFromMigrations());
+                entity.HasKey(u => u.Id);
+            });
+
+            modelBuilder.Entity<ProjectLookup>(entity =>
+            {
+                entity.ToTable("Projects", t => t.ExcludeFromMigrations());
+                entity.HasKey(p => p.Id);
             });
         }
     }

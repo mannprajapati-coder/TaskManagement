@@ -1,0 +1,38 @@
+@{
+    ViewData["Title"] = "Calendar";
+    var workspaces = ViewBag.Workspaces as List<TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel>();
+    var currentWorkspace = ViewBag.CurrentWorkspace as TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel;
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" />
+
+<div class="container-fluid py-4 px-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-calendar3 text-primary me-2"></i>Calendar</h2>
+            <p class="text-secondary mb-0">Tasks by due date &mdash; drag a task to reschedule it.</p>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            @if (workspaces.Any())
+            {
+                <form method="get" asp-action="Index" class="d-flex align-items-center">
+                    <label class="form-label me-2 mb-0 extra-small text-muted fw-semibold">Workspace:</label>
+                    <select name="workspaceId" onchange="this.form.submit()" class="form-select form-select-sm rounded-pill shadow-sm" style="min-width: 200px;">
+                        @foreach (var ws in workspaces)
+                        {
+                            <option value="@ws.Id" selected="@(currentWorkspace != null && currentWorkspace.Id == ws.Id)">@ws.Name</option>
+                        }
+                    </select>
+                </form>
+            }
+        </div>
+    </div>
+
+    <div id="calendar" data-workspace-id="@currentWorkspace?.Id" class="bg-white rounded-4 shadow-sm p-3"></div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="~/js/calendar.js" asp-append-version="true"></script>
+}

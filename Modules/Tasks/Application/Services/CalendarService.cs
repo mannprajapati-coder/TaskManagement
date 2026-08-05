@@ -21,8 +21,14 @@ namespace Modules.Tasks.Application.Services
 
         public async Task<List<CalendarEventViewModel>> GetCalendarEventsAsync(Guid workspaceId, DateTime startDate, DateTime endDate)
         {
+            var projectIds = await _dbContext.ProjectLookups
+                .Where(p => p.WorkspaceId == workspaceId)
+                .Select(p => p.Id)
+                .ToListAsync();
+
             var tasks = await _dbContext.Tasks
-                .Where(t => t.DueDate.HasValue && t.DueDate >= startDate && t.DueDate <= endDate)
+                .Where(t => projectIds.Contains(t.ProjectId) &&
+                            t.DueDate.HasValue && t.DueDate >= startDate && t.DueDate <= endDate)
                 .OrderBy(t => t.DueDate)
                 .ToListAsync();
 

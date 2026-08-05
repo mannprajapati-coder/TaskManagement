@@ -4,8 +4,12 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Modules.Notifications.Domain.IServices;
 using Modules.Tasks.Domain.IServices;
+using TaskPlatform.Api.Hubs;
 using TaskPlatform.Shared.ViewModels.Common;
+using TaskPlatform.Shared.ViewModels.Notification;
 using TaskPlatform.Shared.ViewModels.Task;
 
 namespace TaskPlatform.Api.Controllers
@@ -16,10 +20,14 @@ namespace TaskPlatform.Api.Controllers
     public class TasksController : ControllerBase
     {
         private readonly ITasksService _tasksService;
+        private readonly INotificationService _notificationService;
+        private readonly IHubContext<NotificationsHub> _hubContext;
 
-        public TasksController(ITasksService tasksService)
+        public TasksController(ITasksService tasksService, INotificationService notificationService, IHubContext<NotificationsHub> hubContext)
         {
             _tasksService = tasksService;
+            _notificationService = notificationService;
+            _hubContext = hubContext;
         }
 
         [HttpGet("GetByProject/{projectId}")]
@@ -56,7 +64,14 @@ namespace TaskPlatform.Api.Controllers
         public async Task<ActionResult<ApiResponse<TaskViewModel>>> UpdateStatus([FromBody] UpdateTaskStatusRequestViewModel model)
         {
             var userId = GetCurrentUserId();
+            var before = await _tasksService.GetTaskByIdAsync(model.TaskId);
             var result = await _tasksService.UpdateTaskStatusAsync(userId, model);
+
+            if (before.Status != result.Status)
+            {
+                await NotifyStatusChangeAsync(result, userId);
+            }
+
             return Ok(ApiResponse<TaskViewModel>.Ok(result, "Task status updated."));
         }
 
@@ -64,7 +79,14 @@ namespace TaskPlatform.Api.Controllers
         public async Task<ActionResult<ApiResponse<TaskViewModel>>> Reorder([FromBody] ReorderTasksRequestViewModel model)
         {
             var userId = GetCurrentUserId();
+            var before = await _tasksService.GetTaskByIdAsync(model.TaskId);
             var result = await _tasksService.ReorderTasksAsync(userId, model);
+
+            if (before.Status != result.Status)
+            {
+                await NotifyStatusChangeAsync(result, userId);
+            }
+
             return Ok(ApiResponse<TaskViewModel>.Ok(result, "Tasks reordered."));
         }
 
@@ -113,6 +135,13 @@ namespace TaskPlatform.Api.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _tasksService.AddTaskAssigneeAsync(userId, model);
+
+            var task = await _tasksService.GetTaskByIdAsync(model.TaskId);
+            await NotifyUserAsync(model.UserId, userId,
+                "You've been assigned a task",
+                $"\"{task.Title}\" was assigned to you.",
+                $"/Task/Detail/{task.Id}");
+
             return Ok(ApiResponse<TaskAssigneeViewModel>.Ok(result, "Assignee added to task."));
         }
 
@@ -192,6 +221,37 @@ namespace TaskPlatform.Api.Controllers
         {
             var count = await _tasksService.ProcessDueRecurringTasksAsync();
             return Ok(ApiResponse<int>.Ok(count, $"Processed recurring tasks. Created {count} new tasks."));
+        }
+
+        private async Task NotifyStatusChangeAsync(TaskViewModel task, Guid currentUserId)
+        {
+            if (!task.PrimaryAssigneeUserId.HasValue)
+            {
+                return;
+            }
+
+            await NotifyUserAsync(task.PrimaryAssigneeUserId.Value, currentUserId,
+                "Task status updated",
+                $"\"{task.Title}\" status changed to {task.Status}.",
+                $"/Task/Detail/{task.Id}");
+        }
+
+        private async Task NotifyUserAsync(Guid targetUserId, Guid currentUserId, string title, string message, string linkUrl)
+        {
+            if (targetUserId == currentUserId)
+            {
+                return;
+            }
+
+            var notification = await _notificationService.SendNotificationAsync(new SendNotificationRequestViewModel
+            {
+                UserId = targetUserId,
+                Title = title,
+                Message = message,
+                LinkUrl = linkUrl
+            });
+
+            await _hubContext.Clients.User(targetUserId.ToString()).SendAsync("ReceiveNotification", notification);
         }
 
         private Guid GetCurrentUserId()

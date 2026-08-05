@@ -14,6 +14,7 @@ namespace Modules.Projects.Infrastructure.Context
         public DbSet<ProjectFavorite> ProjectFavorites => Set<ProjectFavorite>();
         public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
         public DbSet<ProjectJoinRequest> ProjectJoinRequests => Set<ProjectJoinRequest>();
+        public DbSet<UserLookup> UserLookups => Set<UserLookup>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -57,6 +58,12 @@ namespace Modules.Projects.Infrastructure.Context
                       .WithMany(p => p.JoinRequests)
                       .HasForeignKey(r => r.ProjectId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UserLookup>(entity =>
+            {
+                entity.ToTable("Users", t => t.ExcludeFromMigrations());
+                entity.HasKey(u => u.Id);
             });
         }
     }

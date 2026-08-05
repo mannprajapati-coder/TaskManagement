@@ -174,16 +174,26 @@ namespace Modules.Projects.Application.Services
                 .OrderByDescending(m => m.JoinedAt)
                 .ToListAsync();
 
+            var userLookup = await GetUserLookupAsync(members.Select(m => m.UserId));
+
             return members.Select(m => new ProjectMemberViewModel
             {
                 Id = m.Id,
                 ProjectId = m.ProjectId,
                 UserId = m.UserId,
-                FullName = "Project Member",
-                Email = "member@taskplatform.com",
+                FullName = userLookup.TryGetValue(m.UserId, out var u) ? u.FullName : "Unknown User",
+                Email = userLookup.TryGetValue(m.UserId, out var u2) ? (u2.Email ?? string.Empty) : string.Empty,
                 Role = m.ProjectScopedRole,
                 JoinedAt = m.JoinedAt
             }).ToList();
+        }
+
+        private async Task<Dictionary<Guid, UserLookup>> GetUserLookupAsync(IEnumerable<Guid> userIds)
+        {
+            var distinctIds = userIds.Distinct().ToList();
+            return await _dbContext.UserLookups
+                .Where(u => distinctIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id);
         }
 
         public async Task<ProjectMemberViewModel> AddMemberAsync(Guid userId, AddProjectMemberRequestViewModel model)
@@ -208,13 +218,15 @@ namespace Modules.Projects.Application.Services
             _dbContext.ProjectMembers.Add(member);
             await _dbContext.SaveChangesAsync();
 
+            var addedUser = await _dbContext.UserLookups.FirstOrDefaultAsync(u => u.Id == member.UserId);
+
             return new ProjectMemberViewModel
             {
                 Id = member.Id,
                 ProjectId = member.ProjectId,
                 UserId = member.UserId,
-                FullName = "Project Member",
-                Email = "member@taskplatform.com",
+                FullName = addedUser?.FullName ?? "Unknown User",
+                Email = addedUser?.Email ?? string.Empty,
                 Role = member.ProjectScopedRole,
                 JoinedAt = member.JoinedAt
             };

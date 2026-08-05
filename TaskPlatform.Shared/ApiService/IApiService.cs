@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TaskPlatform.Shared.ViewModels.Auth;
@@ -81,9 +82,34 @@ namespace TaskPlatform.Shared.ApiService
         Task<ApiResponse<List<TaskWatcherViewModel>>> GetTaskWatchersAsync(string taskId, string accessToken);
         Task<ApiResponse<bool>> ToggleTaskWatcherAsync(string taskId, string accessToken);
 
+        // Checklists
+        Task<ApiResponse<List<ChecklistItemViewModel>>> GetChecklistItemsAsync(string taskId, string accessToken);
+        Task<ApiResponse<ChecklistItemViewModel>> AddChecklistItemAsync(AddChecklistItemRequestViewModel model, string accessToken);
+        Task<ApiResponse<bool>> ToggleChecklistItemAsync(string itemId, string accessToken);
+        Task<ApiResponse<bool>> DeleteChecklistItemAsync(string itemId, string accessToken);
+
+        // Recurring Task Rule
+        Task<ApiResponse<RecurringTaskRuleViewModel>> GetRecurringTaskRuleAsync(string taskId, string accessToken);
+        Task<ApiResponse<RecurringTaskRuleViewModel>> SetRecurringTaskRuleAsync(SetRecurringTaskRuleRequestViewModel model, string accessToken);
+
+        // Comments
+        Task<ApiResponse<List<CommentViewModel>>> GetTaskCommentsAsync(string taskId, string accessToken);
+        Task<ApiResponse<CommentViewModel>> AddTaskCommentAsync(AddCommentRequestViewModel model, string accessToken);
+        Task<ApiResponse<bool>> DeleteTaskCommentAsync(string commentId, string accessToken);
+
+        // Attachments
+        Task<ApiResponse<List<AttachmentViewModel>>> GetTaskAttachmentsAsync(string taskId, string accessToken);
+        Task<ApiResponse<AttachmentViewModel>> AddTaskAttachmentAsync(string taskId, string fileName, string filePath, long fileSize, string contentType, string accessToken);
+        Task<ApiResponse<bool>> DeleteTaskAttachmentAsync(string attachmentId, string accessToken);
+
         // Calendar & Dashboard
-        Task<ApiResponse<List<CalendarEventViewModel>>> GetCalendarEventsAsync(string workspaceId, string accessToken);
+        Task<ApiResponse<List<CalendarEventViewModel>>> GetCalendarEventsAsync(string workspaceId, DateTime? start, DateTime? end, string accessToken);
         Task<ApiResponse<bool>> RescheduleTaskAsync(RescheduleTaskDateRequestViewModel model, string accessToken);
         Task<ApiResponse<DashboardOverviewViewModel>> GetDashboardOverviewAsync(string workspaceId, string accessToken);
+
+        // Notifications
+        Task<ApiResponse<List<NotificationItemViewModel>>> GetMyNotificationsAsync(bool unreadOnly, string accessToken);
+        Task<ApiResponse<bool>> MarkNotificationAsReadAsync(string id, string accessToken);
+        Task<ApiResponse<bool>> MarkAllNotificationsAsReadAsync(string accessToken);
     }
 }

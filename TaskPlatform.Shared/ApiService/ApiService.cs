@@ -309,10 +309,85 @@ namespace TaskPlatform.Shared.ApiService
             return await PostWithTokenAsync<object, bool>($"api/v1/Tasks/{taskId}/ToggleWatcher", new { }, accessToken);
         }
 
-        // Calendar & Dashboard
-        public async Task<ApiResponse<List<CalendarEventViewModel>>> GetCalendarEventsAsync(string workspaceId, string accessToken)
+        // Checklists
+        public async Task<ApiResponse<List<ChecklistItemViewModel>>> GetChecklistItemsAsync(string taskId, string accessToken)
         {
-            return await GetWithTokenAsync<List<CalendarEventViewModel>>($"api/v1/Calendar/Events/{workspaceId}", accessToken);
+            return await GetWithTokenAsync<List<ChecklistItemViewModel>>($"api/v1/Tasks/{taskId}/Checklists", accessToken);
+        }
+
+        public async Task<ApiResponse<ChecklistItemViewModel>> AddChecklistItemAsync(AddChecklistItemRequestViewModel model, string accessToken)
+        {
+            return await PostWithTokenAsync<AddChecklistItemRequestViewModel, ChecklistItemViewModel>("api/v1/Tasks/AddChecklistItem", model, accessToken);
+        }
+
+        public async Task<ApiResponse<bool>> ToggleChecklistItemAsync(string itemId, string accessToken)
+        {
+            return await PostWithTokenAsync<object, bool>($"api/v1/Tasks/ToggleChecklistItem/{itemId}", new { }, accessToken);
+        }
+
+        public async Task<ApiResponse<bool>> DeleteChecklistItemAsync(string itemId, string accessToken)
+        {
+            return await DeleteWithTokenAsync<bool>($"api/v1/Tasks/DeleteChecklistItem/{itemId}", accessToken);
+        }
+
+        // Recurring Task Rule
+        public async Task<ApiResponse<RecurringTaskRuleViewModel>> GetRecurringTaskRuleAsync(string taskId, string accessToken)
+        {
+            return await GetWithTokenAsync<RecurringTaskRuleViewModel>($"api/v1/Tasks/{taskId}/RecurringRule", accessToken);
+        }
+
+        public async Task<ApiResponse<RecurringTaskRuleViewModel>> SetRecurringTaskRuleAsync(SetRecurringTaskRuleRequestViewModel model, string accessToken)
+        {
+            return await PostWithTokenAsync<SetRecurringTaskRuleRequestViewModel, RecurringTaskRuleViewModel>("api/v1/Tasks/SetRecurringRule", model, accessToken);
+        }
+
+        // Comments
+        public async Task<ApiResponse<List<CommentViewModel>>> GetTaskCommentsAsync(string taskId, string accessToken)
+        {
+            return await GetWithTokenAsync<List<CommentViewModel>>($"api/v1/Collaboration/Tasks/{taskId}/Comments", accessToken);
+        }
+
+        public async Task<ApiResponse<CommentViewModel>> AddTaskCommentAsync(AddCommentRequestViewModel model, string accessToken)
+        {
+            return await PostWithTokenAsync<AddCommentRequestViewModel, CommentViewModel>("api/v1/Collaboration/Comments/Add", model, accessToken);
+        }
+
+        public async Task<ApiResponse<bool>> DeleteTaskCommentAsync(string commentId, string accessToken)
+        {
+            return await DeleteWithTokenAsync<bool>($"api/v1/Collaboration/Comments/{commentId}", accessToken);
+        }
+
+        // Attachments
+        public async Task<ApiResponse<List<AttachmentViewModel>>> GetTaskAttachmentsAsync(string taskId, string accessToken)
+        {
+            return await GetWithTokenAsync<List<AttachmentViewModel>>($"api/v1/Collaboration/Tasks/{taskId}/Attachments", accessToken);
+        }
+
+        public async Task<ApiResponse<AttachmentViewModel>> AddTaskAttachmentAsync(string taskId, string fileName, string filePath, long fileSize, string contentType, string accessToken)
+        {
+            var query = $"api/v1/Collaboration/Attachments/Add?taskId={Uri.EscapeDataString(taskId)}" +
+                        $"&fileName={Uri.EscapeDataString(fileName)}" +
+                        $"&filePath={Uri.EscapeDataString(filePath)}" +
+                        $"&fileSize={fileSize}" +
+                        $"&contentType={Uri.EscapeDataString(contentType)}";
+            return await PostWithTokenAsync<object, AttachmentViewModel>(query, new { }, accessToken);
+        }
+
+        public async Task<ApiResponse<bool>> DeleteTaskAttachmentAsync(string attachmentId, string accessToken)
+        {
+            return await DeleteWithTokenAsync<bool>($"api/v1/Collaboration/Attachments/{attachmentId}", accessToken);
+        }
+
+        // Calendar & Dashboard
+        public async Task<ApiResponse<List<CalendarEventViewModel>>> GetCalendarEventsAsync(string workspaceId, DateTime? start, DateTime? end, string accessToken)
+        {
+            var url = $"api/v1/Calendar/Events/{workspaceId}";
+            var queryParams = new List<string>();
+            if (start.HasValue) queryParams.Add($"start={start.Value:yyyy-MM-dd}");
+            if (end.HasValue) queryParams.Add($"end={end.Value:yyyy-MM-dd}");
+            if (queryParams.Count > 0) url += "?" + string.Join("&", queryParams);
+
+            return await GetWithTokenAsync<List<CalendarEventViewModel>>(url, accessToken);
         }
 
         public async Task<ApiResponse<bool>> RescheduleTaskAsync(RescheduleTaskDateRequestViewModel model, string accessToken)
@@ -323,6 +398,24 @@ namespace TaskPlatform.Shared.ApiService
         public async Task<ApiResponse<DashboardOverviewViewModel>> GetDashboardOverviewAsync(string workspaceId, string accessToken)
         {
             return await GetWithTokenAsync<DashboardOverviewViewModel>($"api/v1/Dashboard/Overview/{workspaceId}", accessToken);
+        }
+
+        // Notifications
+        public async Task<ApiResponse<List<NotificationItemViewModel>>> GetMyNotificationsAsync(bool unreadOnly, string accessToken)
+        {
+            var url = "api/v1/Notifications";
+            if (unreadOnly) url += "?unreadOnly=true";
+            return await GetWithTokenAsync<List<NotificationItemViewModel>>(url, accessToken);
+        }
+
+        public async Task<ApiResponse<bool>> MarkNotificationAsReadAsync(string id, string accessToken)
+        {
+            return await PostWithTokenAsync<object, bool>($"api/v1/Notifications/MarkAsRead/{id}", new { }, accessToken);
+        }
+
+        public async Task<ApiResponse<bool>> MarkAllNotificationsAsReadAsync(string accessToken)
+        {
+            return await PostWithTokenAsync<object, bool>("api/v1/Notifications/MarkAllAsRead", new { }, accessToken);
         }
 
         // Helper Methods

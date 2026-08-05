@@ -1,14 +1,44 @@
 @model TaskPlatform.Shared.ViewModels.Task.TaskViewModel
+@using TaskPlatform.Shared.ViewModels.Collaboration
+@using TaskPlatform.Shared.ViewModels.Project
 @{
     ViewData["Title"] = Model.Title;
     var subtasks = ViewBag.Subtasks as List<TaskPlatform.Shared.ViewModels.Task.SubtaskViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Task.SubtaskViewModel>();
     var assignees = ViewBag.Assignees as List<TaskPlatform.Shared.ViewModels.Task.TaskAssigneeViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Task.TaskAssigneeViewModel>();
     var watchers = ViewBag.Watchers as List<TaskPlatform.Shared.ViewModels.Task.TaskWatcherViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Task.TaskWatcherViewModel>();
+    var checklistItems = ViewBag.ChecklistItems as List<TaskPlatform.Shared.ViewModels.Task.ChecklistItemViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Task.ChecklistItemViewModel>();
+    var recurringRule = ViewBag.RecurringRule as TaskPlatform.Shared.ViewModels.Task.RecurringTaskRuleViewModel;
+    var comments = ViewBag.Comments as List<CommentViewModel> ?? new List<CommentViewModel>();
+    var attachments = ViewBag.Attachments as List<AttachmentViewModel> ?? new List<AttachmentViewModel>();
+    var projectMembers = ViewBag.ProjectMembers as List<ProjectMemberViewModel> ?? new List<ProjectMemberViewModel>();
+    var unassignedMembers = projectMembers.Where(m => !assignees.Any(a => a.UserId == m.UserId)).ToList();
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    var checklistDone = checklistItems.Count(c => c.IsCompleted);
+    var checklistPct = checklistItems.Count > 0 ? (int)Math.Round(100.0 * checklistDone / checklistItems.Count) : 0;
+
+    string FormatFileSize(long bytes)
+    {
+        if (bytes >= 1024 * 1024) return $"{bytes / (1024.0 * 1024):0.#} MB";
+        if (bytes >= 1024) return $"{bytes / 1024.0:0.#} KB";
+        return $"{bytes} B";
+    }
+
+    string FileIcon(string contentType)
+    {
+        if (string.IsNullOrEmpty(contentType)) return "bi-file-earmark";
+        if (contentType.StartsWith("image/")) return "bi-file-earmark-image";
+        if (contentType == "application/pdf") return "bi-file-earmark-pdf";
+        if (contentType.Contains("word")) return "bi-file-earmark-word";
+        if (contentType.Contains("sheet") || contentType.Contains("excel")) return "bi-file-earmark-excel";
+        if (contentType.StartsWith("text/")) return "bi-file-earmark-text";
+        if (contentType.Contains("zip")) return "bi-file-earmark-zip";
+        return "bi-file-earmark";
+    }
 }
 
 <div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-lg-9">
             <div class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start mb-3">
@@ -121,61 +151,275 @@
                     </form>
                 </div>
             </div>
+
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <ul class="nav nav-pills gap-1 mb-4" id="taskWidgetTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-assignees" type="button" role="tab">
+                                <i class="bi bi-people me-1"></i> Assignees
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-checklist" type="button" role="tab">
+                                <i class="bi bi-check2-square me-1"></i> Checklist
+                                @if (checklistItems.Count > 0)
+                                {
+                                    <span class="badge bg-light text-dark border rounded-pill ms-1 badge-sm">@checklistDone/@checklistItems.Count</span>
+                                }
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-comments" type="button" role="tab">
+                                <i class="bi bi-chat-dots me-1"></i> Comments
+                                @if (comments.Count > 0)
+                                {
+                                    <span class="badge bg-light text-dark border rounded-pill ms-1 badge-sm">@comments.Count</span>
+                                }
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-attachments" type="button" role="tab">
+                                <i class="bi bi-paperclip me-1"></i> Attachments
+                                @if (attachments.Count > 0)
+                                {
+                                    <span class="badge bg-light text-dark border rounded-pill ms-1 badge-sm">@attachments.Count</span>
+                                }
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-recurring" type="button" role="tab">
+                                <i class="bi bi-arrow-repeat me-1"></i> Recurring
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- Assignees -->
+                        <div class="tab-pane fade show active" id="tab-assignees" role="tabpanel">
+                            @if (assignees.Any())
+                            {
+                                <ul class="list-group list-group-flush mb-3">
+                                    @foreach (var a in assignees)
+                                    {
+                                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2 border-bottom">
+                                            <div>
+                                                <span class="fw-semibold text-dark">@a.FullName</span>
+                                                <span class="extra-small text-muted d-block">@a.Email</span>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                @if (a.IsPrimary)
+                                                {
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary rounded-pill badge-sm">Primary</span>
+                                                }
+                                                <form asp-action="RemoveAssignee" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="taskId" value="@Model.Id" />
+                                                    <input type="hidden" name="targetUserId" value="@a.UserId" />
+                                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Remove assignee"><i class="bi bi-x-lg"></i></button>
+                                                </form>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="text-muted small mb-3">No one is assigned to this task yet.</p>
+                            }
+
+                            @if (unassignedMembers.Any())
+                            {
+                                <form asp-action="AddAssignee" method="post" class="d-flex gap-2 align-items-center">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="TaskId" value="@Model.Id" />
+                                    <select name="UserId" class="form-select form-select-sm" style="max-width: 260px;" required>
+                                        @foreach (var m in unassignedMembers)
+                                        {
+                                            <option value="@m.UserId">@m.FullName (@m.Email)</option>
+                                        }
+                                    </select>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="IsPrimary" value="true" id="isPrimaryCheck" />
+                                        <label class="form-check-label extra-small" for="isPrimaryCheck">Primary</label>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Add</button>
+                                </form>
+                            }
+                            else if (!projectMembers.Any())
+                            {
+                                <p class="text-muted small mb-0">No project members available to assign.</p>
+                            }
+                        </div>
+
+                        <!-- Checklist -->
+                        <div class="tab-pane fade" id="tab-checklist" role="tabpanel">
+                            @if (checklistItems.Any())
+                            {
+                                <div class="progress mb-3" style="height: 8px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: @checklistPct%;" aria-valuenow="@checklistPct" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <ul class="list-group list-group-flush mb-3" id="checklistList">
+                                    @foreach (var item in checklistItems)
+                                    {
+                                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2 border-bottom checklist-item" data-item-id="@item.Id">
+                                            <div class="form-check">
+                                                <input class="form-check-input checklist-toggle" type="checkbox" data-item-id="@item.Id" id="chk-@item.Id" @(item.IsCompleted ? "checked" : "") />
+                                                <label class="form-check-label @(item.IsCompleted ? "text-decoration-line-through text-muted" : "text-dark")" for="chk-@item.Id">@item.Title</label>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-link text-danger p-0 checklist-delete" data-item-id="@item.Id" title="Delete item"><i class="bi bi-x-lg"></i></button>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="text-muted small mb-3">No checklist items yet.</p>
+                            }
+
+                            <form asp-action="AddChecklistItem" method="post" class="mt-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="TaskId" value="@Model.Id" />
+                                <div class="input-group">
+                                    <input type="text" name="Title" class="form-control form-control-sm" placeholder="Add a checklist item..." required maxlength="200" />
+                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Add</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Comments -->
+                        <div class="tab-pane fade" id="tab-comments" role="tabpanel">
+                            @if (comments.Any())
+                            {
+                                <div class="mb-3" style="max-height: 360px; overflow-y: auto;">
+                                    @foreach (var c in comments)
+                                    {
+                                        <div class="d-flex justify-content-between align-items-start border-bottom py-2">
+                                            <div>
+                                                <span class="fw-semibold text-dark">@c.AuthorName</span>
+                                                <span class="extra-small text-muted ms-2">@c.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
+                                                <p class="text-secondary mb-0 mt-1">@c.CommentText</p>
+                                            </div>
+                                            @if (c.UserId.ToString() == currentUserId)
+                                            {
+                                                <form asp-action="DeleteComment" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@c.Id" />
+                                                    <input type="hidden" name="taskId" value="@Model.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Delete comment"><i class="bi bi-trash"></i></button>
+                                                </form>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted small mb-3">No comments yet. Start the discussion below.</p>
+                            }
+
+                            <form asp-action="AddComment" method="post" class="mt-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="TaskId" value="@Model.Id" />
+                                <textarea name="CommentText" class="form-control form-control-sm mb-2" rows="2" maxlength="2000" placeholder="Write a comment..." required></textarea>
+                                <button type="submit" class="btn btn-sm btn-gradient rounded-pill px-3">Post Comment</button>
+                            </form>
+                        </div>
+
+                        <!-- Attachments -->
+                        <div class="tab-pane fade" id="tab-attachments" role="tabpanel">
+                            <form asp-action="UploadAttachment" method="post" enctype="multipart/form-data" class="mb-3">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="taskId" value="@Model.Id" />
+                                <label id="attachmentDropzone" for="attachmentFileInput" class="d-block text-center border border-2 border-dashed rounded-4 p-4 text-muted" style="cursor: pointer;">
+                                    <i class="bi bi-cloud-arrow-up display-6 d-block mb-2"></i>
+                                    <span class="extra-small">Drag &amp; drop a file here, or click to browse (max 25 MB)</span>
+                                    <input id="attachmentFileInput" type="file" name="file" class="d-none" required />
+                                </label>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <span id="attachmentFileName" class="extra-small text-muted"></span>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-upload"></i> Upload</button>
+                                </div>
+                            </form>
+
+                            @if (attachments.Any())
+                            {
+                                <ul class="list-group list-group-flush">
+                                    @foreach (var att in attachments)
+                                    {
+                                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2 border-bottom">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi @FileIcon(att.ContentType) fs-5 text-primary"></i>
+                                                <div>
+                                                    <span class="fw-semibold text-dark d-block">@att.FileName</span>
+                                                    <span class="extra-small text-muted">@FormatFileSize(att.FileSize) &middot; @att.UploadedByName &middot; @att.UploadedAt.ToString("MMM dd, yyyy")</span>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <a asp-action="DownloadAttachment" asp-route-id="@att.Id" asp-route-taskId="@Model.Id" class="btn btn-sm btn-link p-0" title="Download"><i class="bi bi-download"></i></a>
+                                                <form asp-action="DeleteAttachment" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@att.Id" />
+                                                    <input type="hidden" name="taskId" value="@Model.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Delete"><i class="bi bi-trash"></i></button>
+                                                </form>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="text-muted small mb-0">No files attached yet.</p>
+                            }
+                        </div>
+
+                        <!-- Recurring Rule -->
+                        <div class="tab-pane fade" id="tab-recurring" role="tabpanel">
+                            @if (recurringRule != null)
+                            {
+                                <div class="mb-3">
+                                    <span class="badge @(recurringRule.IsActive ? "bg-success-subtle text-success border border-success" : "bg-secondary-subtle text-secondary border border-secondary") rounded-pill">
+                                        @(recurringRule.IsActive ? "Active" : "Inactive")
+                                    </span>
+                                    <span class="extra-small text-muted ms-2">Next run: @recurringRule.NextRunDate.ToString("MMM dd, yyyy HH:mm")</span>
+                                </div>
+                            }
+                            <form asp-action="SetRecurringRule" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="TaskId" value="@Model.Id" />
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label extra-small text-muted">Recurrence Pattern</label>
+                                        <select name="RecurrencePattern" class="form-select form-select-sm">
+                                            <option value="Daily" selected="@(recurringRule?.RecurrencePattern == "Daily")">Daily</option>
+                                            <option value="Weekly" selected="@(recurringRule?.RecurrencePattern == "Weekly")">Weekly</option>
+                                            <option value="Monthly" selected="@(recurringRule?.RecurrencePattern == "Monthly")">Monthly</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label extra-small text-muted">Interval</label>
+                                        <input type="number" name="Interval" class="form-control form-control-sm" min="1" max="100" value="@(recurringRule?.Interval ?? 1)" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label extra-small text-muted">Days of Week</label>
+                                        <input type="text" name="DaysOfWeek" class="form-control form-control-sm" placeholder="e.g. Mon,Wed,Fri" value="@recurringRule?.DaysOfWeek" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label extra-small text-muted">Start Run Date</label>
+                                        <input type="datetime-local" name="StartRunDate" class="form-control form-control-sm" value="@((recurringRule?.NextRunDate ?? DateTime.UtcNow.AddDays(1)).ToString("yyyy-MM-ddTHH:mm"))" />
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-sm btn-gradient rounded-pill px-3 mt-3">Save Recurring Rule</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script>
-        (function () {
-            var form = document.getElementById('statusForm');
-            var select = document.getElementById('statusSelect');
-            var statusDisplay = document.getElementById('statusDisplay');
-            var feedback = document.getElementById('statusUpdateFeedback');
-            var csrfToken = document.querySelector('meta[name="request-verification-token"]')?.getAttribute('content') || '';
-
-            var badgeClasses = {
-                Completed: 'bg-success-subtle text-success border border-success',
-                InProgress: 'bg-primary-subtle text-primary border border-primary',
-                InReview: 'bg-warning-subtle text-dark border border-warning',
-                Cancelled: 'bg-secondary-subtle text-secondary border border-secondary',
-                Todo: 'bg-light text-dark border'
-            };
-            var labels = { InProgress: 'In Progress', InReview: 'In Review' };
-
-            if (!form || !select) {
-                return;
-            }
-
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-
-                fetch('@Url.Action("UpdateStatusAjax", "Task")', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
-                    },
-                    body: JSON.stringify({ TaskId: '@Model.Id', Status: select.value })
-                }).then(function (res) {
-                    if (!res.ok) {
-                        throw new Error('Request failed');
-                    }
-                    return res.json();
-                }).then(function (result) {
-                    if (result.success) {
-                        var status = result.status || select.value;
-                        statusDisplay.innerHTML = '<span class="badge ' + (badgeClasses[status] || 'bg-light text-dark border') + ' rounded-pill">' + (labels[status] || status) + '</span>';
-                        feedback.classList.remove('d-none');
-                        setTimeout(function () { feedback.classList.add('d-none'); }, 2000);
-                    } else {
-                        alert(result.message || 'Could not update status.');
-                        form.submit();
-                    }
-                }).catch(function () {
-                    form.submit();
-                });
-            });
-        })();
-    </script>
+    <script src="~/js/task-detail.js" asp-append-version="true"></script>
 }
