@@ -30,7 +30,7 @@
         <div class="container-fluid app-container px-4">
             <!-- Brand Logo -->
             <a class="navbar-brand brand-logo me-4 d-flex align-items-center gap-2" href="/Dashboard/Index">
-                <div class="avatar avatar-sm bg-gradient text-white shadow-sm" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+                <div class="avatar avatar-sm bg-gradient text-white shadow-sm" style="background: var(--color-primary);">
                     <i class="bi bi-kanban"></i>
                 </div>
                 <span class="fw-extrabold tracking-tight">TaskPlatform</span>
@@ -67,6 +67,11 @@
                     </ul>
 
                     <div class="d-flex align-items-center gap-3 ms-auto">
+                        <!-- Dark / Light Theme Mode Toggle Button -->
+                        <button type="button" id="themeToggleBtn" class="btn btn-light rounded-circle p-2 border-0 shadow-xs" title="Toggle Light/Dark Theme">
+                            <i id="themeToggleIcon" class="bi bi-moon-stars fs-5 text-secondary"></i>
+                        </button>
+
                         <!-- Notification Dropdown -->
                         <div class="dropdown">
                             <button class="btn btn-light rounded-circle p-2 position-relative border-0 shadow-xs" type="button" id="notificationBell" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
@@ -120,6 +125,9 @@
                 else
                 {
                     <div class="d-flex align-items-center gap-2 ms-auto">
+                        <button type="button" id="themeToggleBtn" class="btn btn-light rounded-circle p-2 border-0 shadow-xs me-2" title="Toggle Theme">
+                            <i id="themeToggleIcon" class="bi bi-moon-stars fs-5 text-secondary"></i>
+                        </button>
                         <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-custom px-4 py-2">Log In</a>
                         <a asp-controller="Auth" asp-action="Register" class="btn btn-gradient px-4 py-2 shadow-sm">Get Started Free</a>
                     </div>
@@ -170,6 +178,29 @@
         <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
         <script src="~/js/notifications.js" asp-append-version="true"></script>
     }
+
+    <!-- Theme Toggle Script -->
+    <script>
+        (function() {
+            var toggleBtn = document.getElementById('themeToggleBtn');
+            var toggleIcon = document.getElementById('themeToggleIcon');
+            var currentTheme = localStorage.getItem('taskPlatformTheme') || 'light';
+
+            if (currentTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                if (toggleIcon) toggleIcon.className = 'bi bi-sun-fill fs-5 text-warning';
+            }
+
+            toggleBtn?.addEventListener('click', function() {
+                var theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('taskPlatformTheme', theme);
+                if (toggleIcon) {
+                    toggleIcon.className = theme === 'dark' ? 'bi bi-sun-fill fs-5 text-warning' : 'bi bi-moon-stars fs-5 text-secondary';
+                }
+            });
+        })();
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

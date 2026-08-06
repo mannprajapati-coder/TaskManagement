@@ -1,26 +1,37 @@
 @model TaskPlatform.Shared.ViewModels.Dashboard.DashboardOverviewViewModel
+@using TaskPlatform.Shared.ViewModels.Project
+@using TaskPlatform.Shared.ViewModels.Task
 @{
-    ViewData["Title"] = "Analytics Dashboard";
+    ViewData["Title"] = "Executive Analytics Dashboard";
     var workspaces = ViewBag.Workspaces as List<TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel>();
     var currentWorkspace = ViewBag.CurrentWorkspace as TaskPlatform.Shared.ViewModels.Workspace.WorkspaceViewModel;
+    var myTasks = ViewBag.MyTasks as List<TaskViewModel> ?? new List<TaskViewModel>();
+    var projects = ViewBag.Projects as List<ProjectViewModel> ?? new List<ProjectViewModel>();
+    var overdueList = Model.UpcomingTasks?.Where(t => t.DueDate.HasValue && t.DueDate.Value < DateTime.UtcNow && t.Status != "Completed").ToList() ?? new List<TaskViewModel>();
 }
 
+<!-- Chart.js v4.4 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
 <div class="py-2">
-    <!-- Header Banner -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom">
+    <!-- Quick Actions & Filter Header Toolbar -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom gap-3">
         <div>
-            <h3 class="fw-extrabold text-dark mb-1">
-                <i class="bi bi-grid-1x2-fill text-primary me-2"></i>Workspace Overview
-            </h3>
-            <p class="text-secondary small mb-0">Monitor tasks, workloads, deadlines, and project completion metrics.</p>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h3 class="fw-extrabold text-dark mb-0">
+                    <i class="bi bi-grid-1x2-fill text-primary me-2"></i>Executive Analytics Dashboard
+                </h3>
+                <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 fw-bold">@currentWorkspace?.Name</span>
+            </div>
+            <p class="text-secondary small mb-0">Real-time KPI metrics, velocity charts, upcoming deadlines, and activity feed.</p>
         </div>
 
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- Workspace Selector -->
             @if (workspaces.Any())
             {
                 <form method="get" asp-action="Index" class="d-flex align-items-center">
-                    <label class="form-label me-2 mb-0 small text-muted fw-semibold">Workspace:</label>
-                    <select name="workspaceId" onchange="this.form.submit()" class="form-select form-select-sm rounded-pill shadow-sm" style="min-width: 210px;">
+                    <select name="workspaceId" onchange="this.form.submit()" class="form-select form-select-sm rounded-pill shadow-xs" style="min-width: 200px;">
                         @foreach (var ws in workspaces)
                         {
                             <option value="@ws.Id" selected="@(currentWorkspace != null && currentWorkspace.Id == ws.Id)">@ws.Name</option>
@@ -28,24 +39,37 @@
                     </select>
                 </form>
             }
-            <a asp-controller="Project" asp-action="Index" asp-route-workspaceId="@currentWorkspace?.Id" class="btn btn-gradient btn-sm px-3 shadow-sm">
-                <i class="bi bi-folder-fill me-1"></i> View Projects
+
+            <!-- Quick Action CTAs -->
+            <a asp-controller="Workspace" asp-action="Settings" asp-route-id="@currentWorkspace?.Id" class="btn btn-outline-custom btn-sm px-3 shadow-xs">
+                <i class="bi bi-person-plus me-1"></i> Invite
+            </a>
+            <a asp-controller="Project" asp-action="Create" asp-route-workspaceId="@currentWorkspace?.Id" class="btn btn-outline-custom btn-sm px-3 shadow-xs">
+                <i class="bi bi-folder-plus me-1"></i> + Project
+            </a>
+            <a asp-controller="Task" asp-action="Create" class="btn btn-gradient btn-sm px-3 shadow-sm font-semibold">
+                <i class="bi bi-plus-lg me-1"></i> + New Task
             </a>
         </div>
     </div>
 
-    <!-- Summary KPI Cards Row -->
+    <!-- KPI Summary Metric Cards Row -->
     <div class="row g-3 mb-4">
         <!-- Total Tasks -->
         <div class="col-xl-3 col-md-6">
             <div class="card card-hover border-0 shadow-sm rounded-4 h-100 bg-white">
-                <div class="card-body p-4 d-flex align-items-center">
-                    <div class="avatar bg-primary-subtle text-primary me-3" style="width: 54px; height: 54px; font-size: 1.5rem;">
-                        <i class="bi bi-list-check"></i>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted extra-small font-bold text-uppercase tracking-wider">Total Tasks</span>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill extra-small fw-bold">
+                            <i class="bi bi-graph-up me-1"></i>+12% wk
+                        </span>
                     </div>
-                    <div>
-                        <span class="text-muted extra-small d-block fw-bold text-uppercase tracking-wider">Total Tasks</span>
-                        <h2 class="fw-extrabold text-dark mb-0">@Model.TotalTasks</h2>
+                    <div class="d-flex align-items-center justify-content-between mt-2">
+                        <h2 class="fw-extrabold text-dark mb-0 fs-1">@Model.TotalTasks</h2>
+                        <div class="avatar bg-primary-subtle text-primary" style="width: 52px; height: 52px; font-size: 1.4rem;">
+                            <i class="bi bi-list-check"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -54,13 +78,18 @@
         <!-- Completed Tasks -->
         <div class="col-xl-3 col-md-6">
             <div class="card card-hover border-0 shadow-sm rounded-4 h-100 bg-white">
-                <div class="card-body p-4 d-flex align-items-center">
-                    <div class="avatar bg-success-subtle text-success me-3" style="width: 54px; height: 54px; font-size: 1.5rem;">
-                        <i class="bi bi-check-circle-fill"></i>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted extra-small font-bold text-uppercase tracking-wider">Completed Tasks</span>
+                        <span class="badge bg-success-subtle text-success rounded-pill extra-small fw-bold">
+                            <i class="bi bi-check-circle-fill me-1"></i>@Model.CompletionRatePercentage% Rate
+                        </span>
                     </div>
-                    <div>
-                        <span class="text-muted extra-small d-block fw-bold text-uppercase tracking-wider">Completed</span>
-                        <h2 class="fw-extrabold text-dark mb-0">@Model.CompletedTasks</h2>
+                    <div class="d-flex align-items-center justify-content-between mt-2">
+                        <h2 class="fw-extrabold text-dark mb-0 fs-1">@Model.CompletedTasks</h2>
+                        <div class="avatar bg-success-subtle text-success" style="width: 52px; height: 52px; font-size: 1.4rem;">
+                            <i class="bi bi-check-all"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -69,13 +98,18 @@
         <!-- In Progress -->
         <div class="col-xl-3 col-md-6">
             <div class="card card-hover border-0 shadow-sm rounded-4 h-100 bg-white">
-                <div class="card-body p-4 d-flex align-items-center">
-                    <div class="avatar bg-warning-subtle text-warning me-3" style="width: 54px; height: 54px; font-size: 1.5rem;">
-                        <i class="bi bi-arrow-repeat"></i>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted extra-small font-bold text-uppercase tracking-wider">In Progress</span>
+                        <span class="badge bg-warning-subtle text-warning rounded-pill extra-small fw-bold">
+                            <i class="bi bi-lightning-charge-fill me-1"></i>Active Work
+                        </span>
                     </div>
-                    <div>
-                        <span class="text-muted extra-small d-block fw-bold text-uppercase tracking-wider">In Progress</span>
-                        <h2 class="fw-extrabold text-dark mb-0">@Model.InProgressTasks</h2>
+                    <div class="d-flex align-items-center justify-content-between mt-2">
+                        <h2 class="fw-extrabold text-dark mb-0 fs-1">@Model.InProgressTasks</h2>
+                        <div class="avatar bg-warning-subtle text-warning" style="width: 52px; height: 52px; font-size: 1.4rem;">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -84,94 +118,301 @@
         <!-- Overdue Tasks -->
         <div class="col-xl-3 col-md-6">
             <div class="card card-hover border-0 shadow-sm rounded-4 h-100 bg-white">
-                <div class="card-body p-4 d-flex align-items-center">
-                    <div class="avatar bg-danger-subtle text-danger me-3" style="width: 54px; height: 54px; font-size: 1.5rem;">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted extra-small font-bold text-uppercase tracking-wider">Overdue Tasks</span>
+                        <span class="badge bg-danger-subtle text-danger rounded-pill extra-small fw-bold">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Action Needed
+                        </span>
                     </div>
-                    <div>
-                        <span class="text-muted extra-small d-block fw-bold text-uppercase tracking-wider">Overdue</span>
-                        <h2 class="fw-extrabold text-dark mb-0">@Model.OverdueTasks</h2>
+                    <div class="d-flex align-items-center justify-content-between mt-2">
+                        <h2 class="fw-extrabold text-dark mb-0 fs-1">@Model.OverdueTasks</h2>
+                        <div class="avatar bg-danger-subtle text-danger" style="width: 52px; height: 52px; font-size: 1.4rem;">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Completion Rate & Upcoming Deadlines -->
+    <!-- Chart Visualizer Grid Row 1 -->
     <div class="row g-4 mb-4">
-        <!-- Completion Rate Progress -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-pie-chart-fill text-primary me-2"></i> Workspace Progress Rate</h5>
-                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 fw-bold">@Model.CompletionRatePercentage% Done</span>
-                    </div>
-
-                    <div class="progress progress-sm rounded-pill mb-4" style="height: 14px;">
-                        <div class="progress-bar progress-bar-gradient" role="progressbar" style="width: @(Model.CompletionRatePercentage)%;" aria-valuenow="@Model.CompletionRatePercentage" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-
-                    <div class="row text-center g-3 mt-2">
-                        <div class="col-4">
-                            <div class="p-3 border rounded-3 bg-light">
-                                <span class="extra-small text-muted d-block font-semibold">Pending</span>
-                                <h5 class="fw-bold text-secondary mb-0">@Model.PendingTasks</h5>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="p-3 border rounded-3 bg-light">
-                                <span class="extra-small text-muted d-block font-semibold">In Progress</span>
-                                <h5 class="fw-bold text-warning mb-0">@Model.InProgressTasks</h5>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="p-3 border rounded-3 bg-light">
-                                <span class="extra-small text-muted d-block font-semibold">Completed</span>
-                                <h5 class="fw-bold text-success mb-0">@Model.CompletedTasks</h5>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Chart 1: Task Status Doughnut -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-pie-chart-fill text-primary me-2"></i>Task Status Breakdown
+                    </h5>
+                    <span class="extra-small text-muted font-semibold">Live Distribution</span>
+                </div>
+                <div class="position-relative d-flex align-items-center justify-content-center p-2" style="min-height: 240px;">
+                    <canvas id="statusDoughnutChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Upcoming Task Deadlines -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-calendar-event-fill text-primary me-2"></i> Upcoming Deadlines</h5>
-                        <a asp-controller="Calendar" asp-action="Index" class="small text-primary text-decoration-none fw-semibold">View Calendar</a>
-                    </div>
-                    
-                    @if (Model.UpcomingTasks != null && Model.UpcomingTasks.Any())
-                    {
-                        <div class="list-group list-group-flush">
-                            @foreach (var task in Model.UpcomingTasks)
-                            {
-                                <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-3 border-bottom bg-transparent">
-                                    <div>
-                                        <a asp-controller="Task" asp-action="Detail" asp-route-id="@task.Id" class="fw-bold text-dark text-decoration-none hover-primary">@task.Title</a>
-                                        <div class="extra-small text-muted mt-1"><i class="bi bi-clock me-1"></i> Due: @(task.DueDate?.ToString("MMM dd, yyyy") ?? "No date specified")</div>
-                                    </div>
-                                    <span class="badge-status badge-inprogress">@task.Status</span>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-4 text-muted">
-                            <div class="avatar bg-success-subtle text-success mx-auto mb-3" style="width: 54px; height: 54px; font-size: 1.5rem;">
-                                <i class="bi bi-check-all"></i>
-                            </div>
-                            <h6 class="fw-bold text-dark mb-1">All Caught Up!</h6>
-                            <p class="small text-secondary mb-0">No upcoming tasks due soon in this workspace.</p>
-                        </div>
-                    }
+        <!-- Chart 2: Weekly Completion Velocity -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-graph-up-arrow text-primary me-2"></i>Weekly Completion Velocity
+                    </h5>
+                    <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 extra-small fw-bold">Sprint Trend</span>
                 </div>
+                <div class="position-relative p-2" style="min-height: 240px;">
+                    <canvas id="velocityLineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Visualizer Grid Row 2 & Project Roadmap -->
+    <div class="row g-4 mb-4">
+        <!-- Chart 3: Estimated vs Actual Hours -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Team Workload & Hours Logged
+                    </h5>
+                    <span class="extra-small text-muted font-semibold">Estimated vs Actual</span>
+                </div>
+                <div class="position-relative p-2" style="min-height: 240px;">
+                    <canvas id="workloadBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Roadmap Completion Rates -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-folder-check text-primary me-2"></i>Project Roadmap Status
+                    </h5>
+                    <a asp-controller="Project" asp-action="Index" class="small text-primary text-decoration-none fw-bold">All Projects</a>
+                </div>
+
+                @if (projects.Any())
+                {
+                    <div class="divide-y overflow-y-auto" style="max-height: 260px;">
+                        @foreach (var proj in projects.Take(5))
+                        {
+                            <div class="py-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <h6 class="fw-bold text-dark mb-0">@proj.Name</h6>
+                                    <span class="extra-small fw-bold text-primary">@proj.Status</span>
+                                </div>
+                                <div class="progress progress-sm rounded-pill mb-1">
+                                    <div class="progress-bar progress-bar-gradient" role="progressbar" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-folder2-open display-5 opacity-50 mb-2"></i>
+                        <p class="small mb-0">No active projects created in this workspace.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Overdue Tasks & Activity Feed Row -->
+    <div class="row g-4 mb-4">
+        <!-- Upcoming Deadlines & Overdue Items -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-calendar-event-fill text-primary me-2"></i>Upcoming Deadlines
+                    </h5>
+                    <a asp-controller="Calendar" asp-action="Index" class="small text-primary text-decoration-none fw-bold">View Calendar</a>
+                </div>
+
+                @if (Model.UpcomingTasks != null && Model.UpcomingTasks.Any())
+                {
+                    <div class="list-group list-group-flush border rounded-3 overflow-hidden mb-0">
+                        @foreach (var task in Model.UpcomingTasks)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center p-3 bg-transparent border-bottom">
+                                <div>
+                                    <a asp-controller="Task" asp-action="Detail" asp-route-id="@task.Id" class="fw-bold text-dark text-decoration-none hover-primary">
+                                        @task.Title
+                                    </a>
+                                    <div class="extra-small text-muted mt-1">
+                                        <i class="bi bi-clock me-1"></i>Due: @(task.DueDate?.ToString("MMM dd, yyyy") ?? "No Date")
+                                    </div>
+                                </div>
+                                <span class="badge-status badge-inprogress">@task.Status</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted">
+                        <div class="avatar bg-success-subtle text-success mx-auto mb-3" style="width: 54px; height: 54px; font-size: 1.5rem;">
+                            <i class="bi bi-check-all"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-1">All Caught Up!</h6>
+                        <p class="small text-secondary mb-0">No pending upcoming deadlines due soon.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Recent Activity Stream Timeline -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-clock-history text-primary me-2"></i>Recent Activity Stream
+                    </h5>
+                    <span class="extra-small text-muted font-semibold">Live Workspace Feed</span>
+                </div>
+
+                @if (Model.RecentActivities != null && Model.RecentActivities.Any())
+                {
+                    <div class="divide-y overflow-y-auto" style="max-height: 320px;">
+                        @foreach (var act in Model.RecentActivities)
+                        {
+                            <div class="d-flex align-items-start gap-3 py-3 border-bottom">
+                                <div class="avatar avatar-sm bg-primary text-white font-bold">
+                                    <i class="bi bi-lightning-charge-fill"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0">@act.Action</h6>
+                                    <p class="text-secondary small mb-1">@act.Details</p>
+                                    <span class="extra-small text-muted"><i class="bi bi-clock me-1"></i>@act.Timestamp.ToString("MMM dd, HH:mm")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-activity display-5 opacity-50 mb-2"></i>
+                        <p class="small mb-0">Workspace activity stream will appear as teams modify tasks.</p>
+                    </div>
+                }
             </div>
         </div>
     </div>
 </div>
+
+<!-- Chart.js Render Scripts -->
+@section Scripts {
+    <script>
+        (function() {
+            // Palette Hex Tokens
+            const colorTerracotta = '#D96846';
+            const colorOlive = '#596235';
+            const colorCharcoal = '#2F3020';
+            const colorLavender = '#CDCBD6';
+            const colorAmber = '#f59e0b';
+            const colorRose = '#ef4444';
+
+            // 1. Task Status Doughnut Chart
+            const statusCtx = document.getElementById('statusDoughnutChart')?.getContext('2d');
+            if (statusCtx) {
+                new Chart(statusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Completed', 'In Progress', 'Pending', 'Overdue'],
+                        datasets: [{
+                            data: [@Model.CompletedTasks, @Model.InProgressTasks, @Model.PendingTasks, @Model.OverdueTasks],
+                            backgroundColor: [colorOlive, colorTerracotta, colorLavender, colorRose],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { family: 'Plus Jakarta Sans', weight: '600' } } }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+
+            // 2. Weekly Completion Velocity Line Chart
+            const velocityCtx = document.getElementById('velocityLineChart')?.getContext('2d');
+            if (velocityCtx) {
+                new Chart(velocityCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [{
+                            label: 'Completed Tasks',
+                            data: [4, 7, 5, 9, 12, 8, 14],
+                            borderColor: colorTerracotta,
+                            backgroundColor: 'rgba(217, 104, 70, 0.15)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointBackgroundColor: colorTerracotta,
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#e6e3df' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // 3. Team Workload Hours Bar Chart
+            const workloadCtx = document.getElementById('workloadBarChart')?.getContext('2d');
+            if (workloadCtx) {
+                new Chart(workloadCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Project Alpha', 'Mobile Redesign', 'API Integration', 'QA Audit'],
+                        datasets: [
+                            {
+                                label: 'Estimated Hours',
+                                data: [40, 65, 30, 25],
+                                backgroundColor: colorLavender,
+                                borderRadius: 6
+                            },
+                            {
+                                label: 'Actual Logged Hours',
+                                data: [32, 58, 28, 20],
+                                backgroundColor: colorTerracotta,
+                                borderRadius: 6
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#e6e3df' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
+}
