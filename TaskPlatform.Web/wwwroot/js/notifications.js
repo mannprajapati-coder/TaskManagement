@@ -6,7 +6,6 @@
     var badge = document.getElementById('notificationBadge');
     var list = document.getElementById('notificationDropdownList');
     var emptyState = document.getElementById('notificationEmptyState');
-    var toastContainer = document.getElementById('toastContainer');
 
     if (!accessToken || !apiBaseUrl || !badge || !list) {
         return;
@@ -65,15 +64,12 @@
         setBadge(Math.max(0, unreadCount - 1));
     });
 
-    function showToast(n) {
-        if (!toastContainer || typeof bootstrap === 'undefined') {
+    function showNotificationToast(n) {
+        if (typeof window.showToast !== 'function') {
             return;
         }
 
-        var toastEl = document.createElement('div');
-        toastEl.className = 'toast align-items-center border-0 shadow';
-        toastEl.setAttribute('role', 'alert');
-        toastEl.innerHTML =
+        var html =
             '<div class="d-flex">' +
             '<div class="toast-body">' +
             '<div class="fw-semibold"><i class="bi bi-bell-fill text-primary me-1"></i>' + escapeHtml(n.title) + '</div>' +
@@ -82,6 +78,11 @@
             '<button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>' +
             '</div>';
 
+        var toastEl = window.showToast(null, null, { html: html, delay: 6000 });
+        if (!toastEl) {
+            return;
+        }
+
         toastEl.addEventListener('click', function (e) {
             if (e.target.closest('.btn-close')) return;
             if (n.linkUrl) {
@@ -89,11 +90,6 @@
                 window.location.href = n.linkUrl;
             }
         });
-
-        toastContainer.appendChild(toastEl);
-        var toast = new bootstrap.Toast(toastEl, { delay: 6000 });
-        toast.show();
-        toastEl.addEventListener('hidden.bs.toast', function () { toastEl.remove(); });
     }
 
     // Seed the bell with notifications that already existed before this page load.
@@ -125,7 +121,7 @@
     connection.on('ReceiveNotification', function (notification) {
         setBadge(unreadCount + 1);
         prependNotification(notification);
-        showToast(notification);
+        showNotificationToast(notification);
     });
 
     connection.start().catch(function () {

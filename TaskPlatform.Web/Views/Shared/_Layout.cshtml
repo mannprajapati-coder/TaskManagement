@@ -138,23 +138,6 @@
 
     <main class="flex-grow-1 py-4">
         <div class="container-fluid app-container px-4">
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
-                    <i class="bi bi-check-circle-fill me-2 fs-5 align-middle"></i> 
-                    <span class="align-middle fw-medium">@TempData["SuccessMessage"]</span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5 align-middle"></i> 
-                    <span class="align-middle fw-medium">@TempData["ErrorMessage"]</span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            }
-
             @RenderBody()
         </div>
     </main>
@@ -173,10 +156,21 @@
     <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;" id="toastContainer"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @if (User.Identity?.IsAuthenticated == true)
     {
         <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
         <script src="~/js/notifications.js" asp-append-version="true"></script>
+    }
+
+    <!-- Page-level feedback: TempData success/error messages become toasts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded', function () { showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["SuccessMessage"])), 'success'); });</script>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded', function () { showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ErrorMessage"])), 'danger'); });</script>
     }
 
     <!-- Theme Toggle Script -->
@@ -188,12 +182,14 @@
 
             if (currentTheme === 'dark') {
                 document.documentElement.setAttribute('data-theme', 'dark');
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
                 if (toggleIcon) toggleIcon.className = 'bi bi-sun-fill fs-5 text-warning';
             }
 
             toggleBtn?.addEventListener('click', function() {
                 var theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
                 document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-bs-theme', theme);
                 localStorage.setItem('taskPlatformTheme', theme);
                 if (toggleIcon) {
                     toggleIcon.className = theme === 'dark' ? 'bi bi-sun-fill fs-5 text-warning' : 'bi bi-moon-stars fs-5 text-secondary';

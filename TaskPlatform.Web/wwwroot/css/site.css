@@ -64,6 +64,21 @@
     --text-primary: #f4f3ed;
     --text-secondary: #cdcbbd;
     --text-muted: #969884;
+
+    /* Terracotta accent stays identical in both themes; only its tinted/washed
+       variants need to shift from "near-white" to a translucent dark-safe wash,
+       since badges/hover-states/the selected-card rule all key off these vars. */
+    --color-primary-light: rgba(217, 104, 70, 0.16);
+    --color-primary-tint: rgba(217, 104, 70, 0.32);
+
+    /* Shadows tuned for a dark surface: the light-theme shadows are a charcoal-based
+       rgba meant to read against a pale background, and look muddy once the surface
+       itself is already dark — switch to a black-based rgba instead. */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.24);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.24);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.35), 0 2px 4px -2px rgba(0, 0, 0, 0.24);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.45), 0 8px 10px -6px rgba(0, 0, 0, 0.25);
 }
 
 [data-theme="dark"] body {
@@ -102,6 +117,14 @@
 [data-theme="dark"] .task-card {
     background: var(--bg-card);
     border-color: var(--border-color);
+}
+
+[data-theme="dark"] .avatar {
+    border-color: var(--bg-card);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #3a3c2c;
 }
 
 html {
@@ -405,6 +428,12 @@ body {
 .task-card.dragging {
     opacity: 0.5;
     transform: scale(0.98);
+}
+
+.task-card.selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+    box-shadow: var(--shadow-md);
 }
 
 /* Progress bar styling */

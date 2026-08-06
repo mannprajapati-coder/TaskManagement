@@ -19,6 +19,7 @@
     var canModify = ViewBag.CanModify as bool? ?? false;
     var pendingSubtasks = subtasks.Count(st => st.Status != "Completed" && st.Status != "Cancelled");
     var subtaskTitleLookup = ViewBag.SubtaskTitleLookup as Dictionary<Guid, string> ?? new Dictionary<Guid, string>();
+    var subtaskProgress = ViewBag.SubtaskProgress as Dictionary<Guid, (int Done, int Total)> ?? new Dictionary<Guid, (int Done, int Total)>();
 
     string ActorName(Guid actorUserId, string fallback)
     {
@@ -62,6 +63,12 @@
                         </div>
 
                         <div class="d-flex gap-2 align-items-center flex-wrap">
+                            @if (canModify)
+                            {
+                                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-custom rounded-pill px-3">
+                                    <i class="bi bi-pencil me-1"></i> Edit Task
+                                </a>
+                            }
                             <form asp-action="ToggleWatcher" method="post" class="d-inline">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@Model.Id" />
@@ -179,19 +186,49 @@
                         <div class="mb-4">
                             @foreach (var st in subtasks)
                             {
+                                var progress = subtaskProgress.TryGetValue(st.Id, out var p) ? p : (Done: 0, Total: 0);
+                                var isDone = st.Status == "Completed" || st.Status == "Cancelled";
                                 <div class="border rounded-3 mb-2 overflow-hidden subtask-item">
-                                    <button class="w-100 d-flex justify-content-between align-items-center p-3 bg-transparent border-0 text-start subtask-toggle"
-                                            type="button" data-bs-toggle="collapse" data-bs-target="#subtask-@st.Id"
-                                            data-subtask-id="@st.Id" data-project-id="@st.ProjectId">
-                                        <span class="d-flex align-items-center gap-2">
-                                            <i class="bi @(st.Status == "Completed" ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-5"></i>
-                                            <span class="fw-bold @(st.Status == "Completed" ? "text-decoration-line-through text-muted" : "text-dark")">@st.Title</span>
-                                        </span>
-                                        <span class="d-flex align-items-center gap-2">
-                                            <span class="badge-status badge-@st.Status?.ToLower()">@TaskStatusDisplay.GetLabel(st.Status)</span>
-                                            <i class="bi bi-chevron-down small text-muted"></i>
-                                        </span>
-                                    </button>
+                                    <div class="d-flex align-items-center">
+                                        <button class="flex-grow-1 d-flex justify-content-between align-items-center p-3 bg-transparent border-0 text-start subtask-toggle"
+                                                type="button" data-bs-toggle="collapse" data-bs-target="#subtask-@st.Id"
+                                                data-subtask-id="@st.Id" data-project-id="@st.ProjectId">
+                                            <span class="d-flex align-items-center gap-2">
+                                                <i class="bi @(st.Status == "Completed" ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-5"></i>
+                                                <span class="fw-bold @(st.Status == "Completed" ? "text-decoration-line-through text-muted" : "text-dark")">@st.Title</span>
+                                            </span>
+                                            <span class="d-flex align-items-center gap-2">
+                                                @if (st.DueDate.HasValue)
+                                                {
+                                                    <span class="extra-small text-muted bg-light px-2 py-1 rounded border">
+                                                        <i class="bi bi-calendar-event me-1"></i>@st.DueDate.Value.ToString("MMM dd")
+                                                    </span>
+                                                }
+                                                @if (progress.Total > 0)
+                                                {
+                                                    <span class="extra-small text-muted bg-light px-2 py-1 rounded border">
+                                                        <i class="bi bi-check2-square me-1"></i>@progress.Done/@progress.Total
+                                                    </span>
+                                                }
+                                                <span class="badge-status badge-@st.Status?.ToLower()">@TaskStatusDisplay.GetLabel(st.Status)</span>
+                                                <i class="bi bi-chevron-down small text-muted"></i>
+                                            </span>
+                                        </button>
+                                        @if (canModify)
+                                        {
+                                            <div class="d-flex align-items-center gap-1 pe-2">
+                                                @if (!isDone)
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-link text-success p-1 subtask-quick-complete" data-subtask-id="@st.Id" title="Mark Complete">
+                                                        <i class="bi bi-check-circle fs-5"></i>
+                                                    </button>
+                                                }
+                                                <button type="button" class="btn btn-sm btn-link text-danger p-1 subtask-quick-delete" data-subtask-id="@st.Id" title="Delete Subtask">
+                                                    <i class="bi bi-trash fs-6"></i>
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
                                     <div id="subtask-@st.Id" class="collapse">
                                         <div class="p-3 border-top bg-light subtask-panel-container" data-subtask-id="@st.Id">
                                             <div class="text-muted small py-2"><i class="bi bi-hourglass-split me-1"></i>Loading...</div>
@@ -214,9 +251,37 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="ParentTaskId" value="@Model.Id" />
                             <input type="hidden" name="ProjectId" value="@Model.ProjectId" />
-                            <div class="input-group">
-                                <input type="text" name="Title" class="form-control" placeholder="Add a new subtask..." required />
-                                <button type="submit" class="btn btn-gradient px-4 font-semibold"><i class="bi bi-plus-lg me-1"></i> Add Subtask</button>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label extra-small text-muted mb-1">Title</label>
+                                    <input type="text" name="Title" class="form-control" placeholder="Add a new subtask..." required />
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <label class="form-label extra-small text-muted mb-1">Priority</label>
+                                    <select name="Priority" class="form-select">
+                                        <option value="Low">Low</option>
+                                        <option value="Medium" selected>Medium</option>
+                                        <option value="High">High</option>
+                                        <option value="Urgent">Urgent</option>
+                                    </select>
+                                </div>
+                                <div class="col-6 col-md-2">
+                                    <label class="form-label extra-small text-muted mb-1">Due Date</label>
+                                    <input type="date" name="DueDate" class="form-control" />
+                                </div>
+                                <div class="col-8 col-md-3">
+                                    <label class="form-label extra-small text-muted mb-1">Assign To</label>
+                                    <select name="PrimaryAssigneeUserId" class="form-select">
+                                        <option value="">Unassigned</option>
+                                        @foreach (var m in projectMembers)
+                                        {
+                                            <option value="@m.UserId">@m.FullName</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-4 col-md-1">
+                                    <button type="submit" class="btn btn-gradient w-100 font-semibold" title="Add Subtask"><i class="bi bi-plus-lg"></i></button>
+                                </div>
                             </div>
                         </form>
                     }

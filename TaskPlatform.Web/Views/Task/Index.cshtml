@@ -72,7 +72,7 @@
                     <div class="kanban-column-body" data-status="@status">
                         @foreach (var task in columnTasks)
                         {
-                            <div class="task-card" draggable="true" data-task-id="@task.Id" data-status="@task.Status">
+                            <div class="task-card" draggable="true" data-task-id="@task.Id" data-status="@task.Status" tabindex="0">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <h6 class="fw-bold text-dark mb-0 line-clamp-2">
                                         <a asp-action="Detail" asp-route-id="@task.Id" class="text-dark text-decoration-none hover-primary">@task.Title</a>
@@ -94,7 +94,7 @@
                                             }
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
-                                                <a class="dropdown-item py-1 small" asp-action="Detail" asp-route-id="@task.Id">
+                                                <a class="dropdown-item py-1 small" asp-action="Edit" asp-route-id="@task.Id">
                                                     <i class="bi bi-pencil me-1"></i> Edit Details
                                                 </a>
                                             </li>
@@ -120,9 +120,18 @@
                                         </span>
                                     </div>
 
-                                    <div class="avatar avatar-sm">
-                                        <i class="bi bi-person-fill"></i>
-                                    </div>
+                                    @if (task.PrimaryAssigneeUserId.HasValue && !string.IsNullOrEmpty(task.PrimaryAssigneeName) && task.PrimaryAssigneeName != "Unassigned")
+                                    {
+                                        <div class="avatar avatar-sm" title="@task.PrimaryAssigneeName">
+                                            @task.PrimaryAssigneeName.Substring(0, 1).ToUpper()
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="avatar avatar-sm" title="Unassigned">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         }

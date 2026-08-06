@@ -4,6 +4,7 @@
     <ProjectReference Include="..\..\TaskPlatform.Shared\TaskPlatform.Shared.csproj" />
     <ProjectReference Include="..\Projects\Projects.csproj" />
     <ProjectReference Include="..\Workspaces\Workspaces.csproj" />
+    <ProjectReference Include="..\Notifications\Notifications.csproj" />
   </ItemGroup>
 
   <ItemGroup>
