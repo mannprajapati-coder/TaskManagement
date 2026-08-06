@@ -25,7 +25,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/Auth/Login";
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
-        options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
+        options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
         options.ExpireTimeSpan = TimeSpan.FromDays(30);
         options.SlidingExpiration = true;
     });

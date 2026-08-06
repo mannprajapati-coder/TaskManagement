@@ -21,13 +21,18 @@ namespace TaskPlatform.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Login(string? returnUrl = null)
+        public IActionResult Login(string? returnUrl = null)
         {
-            ViewData["ReturnUrl"] = returnUrl;
             if (User.Identity?.IsAuthenticated == true)
             {
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return Redirect(returnUrl);
+                }
+                return RedirectToAction("Index", "Dashboard");
             }
+
+            ViewData["ReturnUrl"] = returnUrl;
             return View(new LoginRequestViewModel());
         }
 
