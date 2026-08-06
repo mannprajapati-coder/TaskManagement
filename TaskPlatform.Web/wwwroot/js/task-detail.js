@@ -67,6 +67,7 @@
     initStatusForms();
     initChecklist();
     initSubtaskPanels();
+    initSubtaskQuickActions();
     initAttachmentDropzone();
 
     function initStatusForms() {
@@ -243,6 +244,53 @@
         if (container) {
             loadSubtaskPanel(subtaskId, container);
         }
+    }
+
+    function initSubtaskQuickActions() {
+        document.addEventListener('click', function (e) {
+            var completeBtn = e.target.closest('.subtask-quick-complete');
+            if (completeBtn) {
+                var subtaskId = completeBtn.getAttribute('data-subtask-id');
+                var row = completeBtn.closest('.subtask-item');
+
+                postJson('/Task/UpdateStatusAjax', { TaskId: subtaskId, Status: 'Completed' })
+                    .then(function (result) {
+                        if (result.success) {
+                            updateSubtaskBadge(subtaskId, result.status || 'Completed');
+                            reloadSubtaskPanel(subtaskId);
+                            completeBtn.remove();
+                        } else {
+                            showInlineFeedback(row, result.message || 'Could not complete subtask.', true);
+                        }
+                    })
+                    .catch(function () {
+                        showInlineFeedback(row, 'Could not complete subtask. Please try again.', true);
+                    });
+                return;
+            }
+
+            var deleteBtn = e.target.closest('.subtask-quick-delete');
+            if (deleteBtn) {
+                var deleteSubtaskId = deleteBtn.getAttribute('data-subtask-id');
+                var deleteRow = deleteBtn.closest('.subtask-item');
+
+                if (!window.confirm('Delete this subtask?')) {
+                    return;
+                }
+
+                postJson('/Task/DeleteSubtaskAjax/' + deleteSubtaskId, {})
+                    .then(function (result) {
+                        if (result.success && deleteRow) {
+                            deleteRow.remove();
+                        } else if (!result.success) {
+                            showInlineFeedback(deleteRow, result.message || 'Could not delete subtask.', true);
+                        }
+                    })
+                    .catch(function () {
+                        showInlineFeedback(deleteRow, 'Could not delete subtask. Please try again.', true);
+                    });
+            }
+        });
     }
 
     function initAttachmentDropzone() {

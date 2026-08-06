@@ -8,6 +8,15 @@
     var myTasks = ViewBag.MyTasks as List<TaskViewModel> ?? new List<TaskViewModel>();
     var projects = ViewBag.Projects as List<ProjectViewModel> ?? new List<ProjectViewModel>();
     var overdueList = Model.UpcomingTasks?.Where(t => t.DueDate.HasValue && t.DueDate.Value < DateTime.UtcNow && t.Status != "Completed").ToList() ?? new List<TaskViewModel>();
+    var growthSign = Model.TaskGrowthPercentage >= 0 ? "+" : "";
+    var workloadItems = (Model.ProjectWorkload ?? new List<TaskPlatform.Shared.ViewModels.Dashboard.ProjectWorkloadViewModel>())
+        .Select(w => new
+        {
+            Name = projects.FirstOrDefault(p => p.Id == w.ProjectId)?.Name ?? "Unknown Project",
+            w.EstimatedHours,
+            w.ActualHours
+        })
+        .ToList();
 }
 
 <!-- Chart.js v4.4 CDN -->
@@ -62,7 +71,7 @@
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <span class="text-muted extra-small font-bold text-uppercase tracking-wider">Total Tasks</span>
                         <span class="badge bg-primary-subtle text-primary rounded-pill extra-small fw-bold">
-                            <i class="bi bi-graph-up me-1"></i>+12% wk
+                            <i class="bi bi-graph-up me-1"></i>@growthSign@Model.TaskGrowthPercentage% wk
                         </span>
                     </div>
                     <div class="d-flex align-items-center justify-content-between mt-2">
@@ -201,13 +210,14 @@
                     <div class="divide-y overflow-y-auto" style="max-height: 260px;">
                         @foreach (var proj in projects.Take(5))
                         {
+                            var projPct = Model.ProjectCompletion?.FirstOrDefault(c => c.ProjectId == proj.Id)?.CompletionPercentage ?? 0;
                             <div class="py-3 border-bottom">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <h6 class="fw-bold text-dark mb-0">@proj.Name</h6>
                                     <span class="extra-small fw-bold text-primary">@proj.Status</span>
                                 </div>
                                 <div class="progress progress-sm rounded-pill mb-1">
-                                    <div class="progress-bar progress-bar-gradient" role="progressbar" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div class="progress-bar progress-bar-gradient" role="progressbar" style="width: @projPct%;" aria-valuenow="@projPct" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                             </div>
                         }
@@ -351,10 +361,10 @@
                 new Chart(velocityCtx, {
                     type: 'line',
                     data: {
-                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CompletionVelocity.Select(v => v.DayLabel))),
                         datasets: [{
                             label: 'Completed Tasks',
-                            data: [4, 7, 5, 9, 12, 8, 14],
+                            data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CompletionVelocity.Select(v => v.CompletedCount))),
                             borderColor: colorTerracotta,
                             backgroundColor: 'rgba(217, 104, 70, 0.15)',
                             fill: true,
@@ -384,17 +394,17 @@
                 new Chart(workloadCtx, {
                     type: 'bar',
                     data: {
-                        labels: ['Project Alpha', 'Mobile Redesign', 'API Integration', 'QA Audit'],
+                        labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(workloadItems.Select(w => w.Name))),
                         datasets: [
                             {
                                 label: 'Estimated Hours',
-                                data: [40, 65, 30, 25],
+                                data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(workloadItems.Select(w => w.EstimatedHours))),
                                 backgroundColor: colorLavender,
                                 borderRadius: 6
                             },
                             {
                                 label: 'Actual Logged Hours',
-                                data: [32, 58, 28, 20],
+                                data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(workloadItems.Select(w => w.ActualHours))),
                                 backgroundColor: colorTerracotta,
                                 borderRadius: 6
                             }

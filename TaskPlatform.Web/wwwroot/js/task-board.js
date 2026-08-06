@@ -7,23 +7,6 @@
     var csrfToken = document.querySelector('meta[name="request-verification-token"]')?.getAttribute('content') || '';
     var draggedCard = null;
 
-    function showToast(message, type) {
-        var toastContainer = document.getElementById('toastContainer');
-        if (!toastContainer) return;
-
-        var toastEl = document.createElement('div');
-        toastEl.className = 'toast align-items-center text-white bg-' + (type === 'danger' ? 'danger' : 'success') + ' border-0 shadow-lg mb-2';
-        toastEl.setAttribute('role', 'alert');
-        toastEl.setAttribute('aria-live', 'assertive');
-        toastEl.setAttribute('aria-atomic', 'true');
-        toastEl.innerHTML = '<div class="d-flex"><div class="toast-body fw-medium"><i class="bi ' + (type === 'danger' ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill') + ' me-2"></i>' + message + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
-
-        toastContainer.appendChild(toastEl);
-        var bsToast = new bootstrap.Toast(toastEl, { delay: 6000 });
-        bsToast.show();
-        toastEl.addEventListener('hidden.bs.toast', function () { toastEl.remove(); });
-    }
-
     function postJson(url, payload) {
         return fetch(url, {
             method: 'POST',
@@ -140,7 +123,44 @@
         }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
     }
 
+    // Selected-card state: click anywhere on a card (outside its interactive
+    // controls) to highlight it, and remember the choice across navigation so
+    // returning from a task's Detail page shows where you left off.
+    var SELECTED_TASK_KEY = 'taskPlatformSelectedTaskId';
+
+    function selectCard(card) {
+        if (!card) {
+            return;
+        }
+        board.querySelectorAll('.task-card.selected').forEach(function (el) {
+            el.classList.remove('selected');
+        });
+        card.classList.add('selected');
+        sessionStorage.setItem(SELECTED_TASK_KEY, card.getAttribute('data-task-id'));
+    }
+
+    (function restoreSelection() {
+        var savedId = sessionStorage.getItem(SELECTED_TASK_KEY);
+        if (!savedId) {
+            return;
+        }
+        var card = board.querySelector('.task-card[data-task-id="' + savedId + '"]');
+        if (card) {
+            card.classList.add('selected');
+        }
+    })();
+
     board.addEventListener('click', function (e) {
+        var card = e.target.closest('.task-card');
+        if (card) {
+            if (!e.target.closest('a, button, .dropdown')) {
+                selectCard(card);
+            } else if (e.target.closest('a')) {
+                // Navigating into the task's Detail page — remember it was the last one viewed.
+                sessionStorage.setItem(SELECTED_TASK_KEY, card.getAttribute('data-task-id'));
+            }
+        }
+
         var moveBtn = e.target.closest('.move-task-btn');
         if (!moveBtn) {
             return;

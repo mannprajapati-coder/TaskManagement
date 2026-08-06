@@ -13,11 +13,17 @@
         var member = projectMembers.FirstOrDefault(m => m.UserId == actorUserId);
         return member?.FullName ?? (string.IsNullOrEmpty(fallback) || fallback == "User" ? "A team member" : fallback);
     }
+
+    var unassignedMembers = projectMembers.Where(m => !assignees.Any(a => a.UserId == m.UserId)).ToList();
 }
 
 <div class="row g-4">
     <div class="col-md-4">
         <span class="small font-semibold text-secondary d-block mb-2">Status</span>
+        @if (Model.DueDate.HasValue)
+        {
+            <p class="extra-small text-muted mb-2"><i class="bi bi-calendar-event me-1"></i>Due @Model.DueDate.Value.ToString("MMM dd, yyyy")</p>
+        }
         @if (canModify)
         {
             <form asp-action="UpdateStatusAjax" method="post" class="d-flex gap-2 align-items-center mb-3 task-status-form" data-subtask-id="@Model.Id">
@@ -42,19 +48,45 @@
         <span class="small font-semibold text-secondary d-block mb-2">Assignees</span>
         @if (assignees.Any())
         {
-            <div class="d-flex flex-column gap-2">
+            <div class="d-flex flex-column gap-2 mb-2">
                 @foreach (var a in assignees)
                 {
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="avatar avatar-sm">@(a.FullName.Substring(0, 1).ToUpper())</div>
-                        <span class="small text-dark">@a.FullName</span>
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar avatar-sm">@(a.FullName.Substring(0, 1).ToUpper())</div>
+                            <span class="small text-dark">@a.FullName</span>
+                        </div>
+                        @if (canModify)
+                        {
+                            <form asp-action="RemoveAssignee" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="taskId" value="@Model.Id" />
+                                <input type="hidden" name="targetUserId" value="@a.UserId" />
+                                <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Remove assignee"><i class="bi bi-x-lg"></i></button>
+                            </form>
+                        }
                     </div>
                 }
             </div>
         }
         else
         {
-            <p class="text-muted small mb-0">No one is assigned to this subtask yet.</p>
+            <p class="text-muted small mb-2">No one is assigned to this subtask yet.</p>
+        }
+
+        @if (canModify && unassignedMembers.Any())
+        {
+            <form asp-action="AddAssignee" method="post" class="d-flex gap-2 align-items-center">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="TaskId" value="@Model.Id" />
+                <select name="UserId" class="form-select form-select-sm" required>
+                    @foreach (var m in unassignedMembers)
+                    {
+                        <option value="@m.UserId">@m.FullName</option>
+                    }
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i></button>
+            </form>
         }
     </div>
 

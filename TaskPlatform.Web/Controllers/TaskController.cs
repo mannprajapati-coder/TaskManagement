@@ -103,12 +103,16 @@ namespace TaskPlatform.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create(string projectId)
+        public async Task<IActionResult> Create(string projectId)
         {
             if (!Guid.TryParse(projectId, out var projGuid))
             {
                 return RedirectToAction("Index", "Workspace");
             }
+
+            var token = GetAccessToken();
+            var membersResp = await _apiService.GetProjectMembersAsync(projectId, token);
+            ViewBag.ProjectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
 
             return View(new CreateTaskRequestViewModel { ProjectId = projGuid });
         }
@@ -117,21 +121,97 @@ namespace TaskPlatform.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateTaskRequestViewModel model)
         {
+            var token = GetAccessToken();
+
             if (!ModelState.IsValid)
             {
+                var membersResp = await _apiService.GetProjectMembersAsync(model.ProjectId.ToString(), token);
+                ViewBag.ProjectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
                 return View(model);
             }
 
-            var token = GetAccessToken();
             var response = await _apiService.CreateTaskAsync(model, token);
 
             if (!response.Success || response.Data == null)
             {
                 ModelState.AddModelError(string.Empty, response.Message);
+                var membersResp = await _apiService.GetProjectMembersAsync(model.ProjectId.ToString(), token);
+                ViewBag.ProjectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
                 return View(model);
             }
 
             TempData["SuccessMessage"] = response.Message;
+            return RedirectToAction(nameof(Detail), new { id = response.Data.Id });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Edit(string id)
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.GetTaskByIdAsync(id, token);
+
+            if (!response.Success || response.Data == null)
+            {
+                TempData["ErrorMessage"] = response.Message;
+                return RedirectToAction("Index", "Workspace");
+            }
+
+            var assigneesResp = await _apiService.GetTaskAssigneesAsync(id, token);
+            var membersResp = await _apiService.GetProjectMembersAsync(response.Data.ProjectId.ToString(), token);
+            var assignees = assigneesResp.Data ?? new List<TaskAssigneeViewModel>();
+            var projectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
+
+            if (!await ComputeCanModifyAsync(response.Data.ProjectId, assignees, projectMembers, token))
+            {
+                TempData["ErrorMessage"] = "Only an assignee, the project owner, or the workspace owner can edit this task.";
+                return RedirectToAction(nameof(Detail), new { id });
+            }
+
+            ViewBag.ProjectMembers = projectMembers;
+            ViewBag.ProjectId = response.Data.ProjectId;
+
+            return View(new UpdateTaskRequestViewModel
+            {
+                TaskId = response.Data.Id,
+                Title = response.Data.Title,
+                Description = response.Data.Description,
+                Priority = response.Data.Priority,
+                StartDate = response.Data.StartDate,
+                DueDate = response.Data.DueDate,
+                EstimatedHours = response.Data.EstimatedHours,
+                ActualHours = response.Data.ActualHours,
+                PrimaryAssigneeUserId = response.Data.PrimaryAssigneeUserId
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(UpdateTaskRequestViewModel model)
+        {
+            var token = GetAccessToken();
+
+            if (!ModelState.IsValid)
+            {
+                var taskResp = await _apiService.GetTaskByIdAsync(model.TaskId.ToString(), token);
+                var membersResp = await _apiService.GetProjectMembersAsync((taskResp.Data?.ProjectId ?? Guid.Empty).ToString(), token);
+                ViewBag.ProjectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
+                ViewBag.ProjectId = taskResp.Data?.ProjectId;
+                return View(model);
+            }
+
+            var response = await _apiService.UpdateTaskAsync(model, token);
+
+            if (!response.Success || response.Data == null)
+            {
+                ModelState.AddModelError(string.Empty, response.Message);
+                var taskResp = await _apiService.GetTaskByIdAsync(model.TaskId.ToString(), token);
+                var membersResp = await _apiService.GetProjectMembersAsync((taskResp.Data?.ProjectId ?? Guid.Empty).ToString(), token);
+                ViewBag.ProjectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
+                ViewBag.ProjectId = taskResp.Data?.ProjectId;
+                return View(model);
+            }
+
+            TempData["SuccessMessage"] = "Task updated successfully.";
             return RedirectToAction(nameof(Detail), new { id = response.Data.Id });
         }
 
@@ -166,6 +246,7 @@ namespace TaskPlatform.Web.Controllers
             var activityLogs = new List<TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel>(
                 activityResp.Data ?? new List<TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel>());
 
+            var subtaskProgress = new Dictionary<Guid, (int Done, int Total)>();
             foreach (var st in subtasks)
             {
                 var subtaskActivityResp = await _apiService.GetTaskActivityAsync(st.Id.ToString(), token);
@@ -173,12 +254,17 @@ namespace TaskPlatform.Web.Controllers
                 {
                     activityLogs.AddRange(subtaskActivityResp.Data);
                 }
+
+                var subtaskChecklistResp = await _apiService.GetChecklistItemsAsync(st.Id.ToString(), token);
+                var subtaskChecklist = subtaskChecklistResp.Data ?? new List<ChecklistItemViewModel>();
+                subtaskProgress[st.Id] = (subtaskChecklist.Count(c => c.IsCompleted), subtaskChecklist.Count);
             }
 
             activityLogs = activityLogs.OrderByDescending(a => a.Timestamp).ToList();
 
             ViewBag.Subtasks = subtasks;
             ViewBag.SubtaskTitleLookup = subtasks.ToDictionary(st => st.Id, st => st.Title);
+            ViewBag.SubtaskProgress = subtaskProgress;
             ViewBag.Assignees = assignees;
             ViewBag.Watchers = watchersResp.Data ?? new List<TaskWatcherViewModel>();
             ViewBag.ChecklistItems = checklistResp.Data ?? new List<ChecklistItemViewModel>();
@@ -285,6 +371,14 @@ namespace TaskPlatform.Web.Controllers
         {
             var token = GetAccessToken();
             var response = await _apiService.ReorderTasksAsync(model, token);
+            return Json(new { success = response.Success, message = response.Message });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteSubtaskAjax(Guid id)
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.DeleteTaskAsync(id.ToString(), token);
             return Json(new { success = response.Success, message = response.Message });
         }
 
