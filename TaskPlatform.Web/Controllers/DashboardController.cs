@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskPlatform.Shared.ApiService;
 using TaskPlatform.Shared.ViewModels.Dashboard;
+using TaskPlatform.Shared.ViewModels.Project;
+using TaskPlatform.Shared.ViewModels.Task;
 
 namespace TaskPlatform.Web.Controllers
 {
@@ -50,8 +53,8 @@ namespace TaskPlatform.Web.Controllers
 
                 ViewBag.CurrentWorkspace = targetWorkspace;
 
+                // Load Dashboard Overview Data
                 var dashboardResp = await _apiService.GetDashboardOverviewAsync(targetWorkspace.Id.ToString(), token);
-
                 var model = (dashboardResp != null && dashboardResp.Data != null) ? dashboardResp.Data : new DashboardOverviewViewModel
                 {
                     WorkspaceId = targetWorkspace.Id,
@@ -63,6 +66,13 @@ namespace TaskPlatform.Web.Controllers
                     OverdueTasks = 0,
                     CompletionRatePercentage = 0
                 };
+
+                // Enrich ViewBag with MyTasks and Projects
+                var myTasksResp = await _apiService.GetMyTasksAsync(null,token);
+                ViewBag.MyTasks = myTasksResp?.Data?.Take(5).ToList() ?? new List<TaskViewModel>();
+
+                var projectsResp = await _apiService.GetWorkspaceProjectsAsync(targetWorkspace.Id.ToString(), token);
+                ViewBag.Projects = projectsResp?.Data ?? new List<ProjectViewModel>();
 
                 return View(model);
             }
