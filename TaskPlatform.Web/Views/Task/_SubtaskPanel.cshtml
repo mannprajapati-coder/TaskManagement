@@ -3,106 +3,90 @@
     var checklistItems = ViewBag.ChecklistItems as List<TaskPlatform.Shared.ViewModels.Task.ChecklistItemViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Task.ChecklistItemViewModel>();
     var assignees = ViewBag.Assignees as List<TaskPlatform.Shared.ViewModels.Task.TaskAssigneeViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Task.TaskAssigneeViewModel>();
     var projectMembers = ViewBag.ProjectMembers as List<TaskPlatform.Shared.ViewModels.Project.ProjectMemberViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Project.ProjectMemberViewModel>();
-    var unassignedMembers = projectMembers.Where(m => !assignees.Any(a => a.UserId == m.UserId)).ToList();
+    var activityLogs = ViewBag.ActivityLogs as List<TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel>();
     var canModify = ViewBag.CanModify as bool? ?? false;
     var checklistDone = checklistItems.Count(c => c.IsCompleted);
     var checklistPct = checklistItems.Count > 0 ? (int)Math.Round(100.0 * checklistDone / checklistItems.Count) : 0;
+
+    string ActorName(Guid actorUserId, string fallback)
+    {
+        var member = projectMembers.FirstOrDefault(m => m.UserId == actorUserId);
+        return member?.FullName ?? (string.IsNullOrEmpty(fallback) || fallback == "User" ? "A team member" : fallback);
+    }
 }
 
 <div class="row g-4">
-    <div class="col-md-6">
-        <h6 class="fw-bold text-dark mb-2">Status</h6>
+    <div class="col-md-4">
+        <span class="small font-semibold text-secondary d-block mb-2">Status</span>
         @if (canModify)
         {
             <form asp-action="UpdateStatusAjax" method="post" class="d-flex gap-2 align-items-center mb-3 task-status-form" data-subtask-id="@Model.Id">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="TaskId" value="@Model.Id" />
-                <select name="Status" class="form-select form-select-sm subtask-status-select" style="max-width: 200px;">
+                <select name="Status" class="form-select form-select-sm rounded-pill" style="max-width: 180px;">
                     <option value="Todo" selected="@(Model.Status == "Todo")">Todo</option>
                     <option value="InProgress" selected="@(Model.Status == "InProgress")">In Progress</option>
                     <option value="InReview" selected="@(Model.Status == "InReview")">In Review</option>
                     <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
                     <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
                 </select>
-                <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+                <button type="submit" class="btn btn-sm btn-gradient rounded-pill px-3">Update</button>
             </form>
+            <div class="inline-feedback-anchor"></div>
         }
         else
         {
             <p class="text-muted small mb-3"><i class="bi bi-lock-fill me-1"></i>Only an assignee, the project owner, or the workspace owner can update this subtask.</p>
         }
 
-        <h6 class="fw-bold text-dark mb-2">Assignees</h6>
+        <span class="small font-semibold text-secondary d-block mb-2">Assignees</span>
         @if (assignees.Any())
         {
-            <ul class="list-group list-group-flush mb-2">
+            <div class="d-flex flex-column gap-2">
                 @foreach (var a in assignees)
                 {
-                    <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-1 border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="avatar avatar-sm">@(a.FullName.Substring(0, 1).ToUpper())</div>
                         <span class="small text-dark">@a.FullName</span>
-                        @if (canModify)
-                        {
-                            <form asp-action="RemoveAssignee" method="post" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="taskId" value="@Model.Id" />
-                                <input type="hidden" name="targetUserId" value="@a.UserId" />
-                                <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Remove assignee"><i class="bi bi-x-lg"></i></button>
-                            </form>
-                        }
-                    </li>
+                    </div>
                 }
-            </ul>
+            </div>
         }
         else
         {
-            <p class="text-muted small mb-2">No one is assigned to this subtask yet.</p>
-        }
-
-        @if (canModify && unassignedMembers.Any())
-        {
-            <form asp-action="AddAssignee" method="post" class="d-flex gap-2 align-items-center">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="TaskId" value="@Model.Id" />
-                <select name="UserId" class="form-select form-select-sm" style="max-width: 220px;" required>
-                    @foreach (var m in unassignedMembers)
-                    {
-                        <option value="@m.UserId">@m.FullName</option>
-                    }
-                </select>
-                <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i></button>
-            </form>
+            <p class="text-muted small mb-0">No one is assigned to this subtask yet.</p>
         }
     </div>
 
-    <div class="col-md-6">
-        <h6 class="fw-bold text-dark mb-2">
+    <div class="col-md-4">
+        <span class="small font-semibold text-secondary d-block mb-2">
             Checklist
             @if (checklistItems.Count > 0)
             {
-                <span class="badge bg-light text-dark border rounded-pill ms-1 badge-sm">@checklistDone/@checklistItems.Count</span>
+                <span class="badge bg-white text-dark border rounded-pill ms-1">@checklistDone/@checklistItems.Count</span>
             }
-        </h6>
+        </span>
 
         @if (checklistItems.Any())
         {
-            <div class="progress mb-2" style="height: 6px;">
-                <div class="progress-bar bg-success" role="progressbar" style="width: @checklistPct%;" aria-valuenow="@checklistPct" aria-valuemin="0" aria-valuemax="100"></div>
+            <div class="progress progress-sm rounded-pill mb-3">
+                <div class="progress-bar progress-bar-gradient" role="progressbar" style="width: @checklistPct%;" aria-valuenow="@checklistPct" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
-            <ul class="list-group list-group-flush mb-2 subtask-checklist-list">
+            <div class="d-flex flex-column gap-2 mb-2">
                 @foreach (var item in checklistItems)
                 {
-                    <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-1 border-bottom checklist-item" data-item-id="@item.Id">
+                    <div class="d-flex justify-content-between align-items-center checklist-item" data-item-id="@item.Id">
                         <div class="form-check">
                             <input class="form-check-input checklist-toggle" type="checkbox" data-item-id="@item.Id" id="chk-@item.Id" @(item.IsCompleted ? "checked" : "") disabled="@(!canModify)" />
                             <label class="form-check-label small @(item.IsCompleted ? "text-decoration-line-through text-muted" : "text-dark")" for="chk-@item.Id">@item.Title</label>
                         </div>
                         @if (canModify)
                         {
-                            <button type="button" class="btn btn-sm btn-link text-danger p-0 checklist-delete" data-item-id="@item.Id" title="Delete item"><i class="bi bi-x-lg"></i></button>
+                            <button type="button" class="btn btn-sm btn-link text-danger p-0 checklist-delete" data-item-id="@item.Id" title="Delete item"><i class="bi bi-trash"></i></button>
                         }
-                    </li>
+                    </div>
                 }
-            </ul>
+            </div>
         }
         else
         {
@@ -119,6 +103,29 @@
                     <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i></button>
                 </div>
             </form>
+        }
+    </div>
+
+    <div class="col-md-4">
+        <span class="small font-semibold text-secondary d-block mb-2">Activity</span>
+        @if (activityLogs.Any())
+        {
+            <ul class="list-unstyled mb-0" style="max-height: 240px; overflow-y: auto;">
+                @foreach (var log in activityLogs)
+                {
+                    <li class="pb-2 mb-2 border-bottom">
+                        <div class="small">
+                            <span class="fw-bold text-dark">@ActorName(log.ActorUserId, log.ActorName)</span>
+                            <span class="text-secondary">@log.Details</span>
+                        </div>
+                        <span class="extra-small text-muted">@log.Timestamp.ToString("MMM dd, yyyy HH:mm")</span>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="text-muted small mb-0">No activity recorded for this subtask yet.</p>
         }
     </div>
 </div>

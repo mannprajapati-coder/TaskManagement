@@ -18,6 +18,29 @@
     var checklistPct = checklistItems.Count > 0 ? (int)Math.Round(100.0 * checklistDone / checklistItems.Count) : 0;
     var canModify = ViewBag.CanModify as bool? ?? false;
     var pendingSubtasks = subtasks.Count(st => st.Status != "Completed" && st.Status != "Cancelled");
+    var subtaskTitleLookup = ViewBag.SubtaskTitleLookup as Dictionary<Guid, string> ?? new Dictionary<Guid, string>();
+
+    string ActorName(Guid actorUserId, string fallback)
+    {
+        var member = projectMembers.FirstOrDefault(m => m.UserId == actorUserId);
+        return member?.FullName ?? (string.IsNullOrEmpty(fallback) || fallback == "User" ? "A team member" : fallback);
+    }
+
+    string ActivityIcon(string action) => action switch
+    {
+        "TaskCreated" => "bi-plus-circle text-success",
+        "TaskUpdated" => "bi-pencil-square text-primary",
+        "StatusChanged" => "bi-arrow-repeat text-warning",
+        "TaskDeleted" => "bi-trash text-danger",
+        "SubtaskCreated" => "bi-diagram-2 text-info",
+        "AssigneeAdded" => "bi-person-plus text-primary",
+        "AssigneeRemoved" => "bi-person-dash text-danger",
+        "ChecklistItemAdded" => "bi-check2-square text-success",
+        "RecurringRuleSet" => "bi-arrow-repeat text-info",
+        "CommentAdded" => "bi-chat-dots text-primary",
+        "AttachmentAdded" => "bi-paperclip text-secondary",
+        _ => "bi-clock-history text-muted"
+    };
 }
 
 <div class="py-2">
@@ -153,15 +176,27 @@
 
                     @if (subtasks.Any())
                     {
-                        <div class="list-group list-group-flush mb-4 border rounded-3 overflow-hidden">
+                        <div class="mb-4">
                             @foreach (var st in subtasks)
                             {
-                                <div class="list-group-item d-flex justify-content-between align-items-center p-3 bg-transparent border-bottom">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="bi @(st.Status == "Completed" ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-5"></i>
-                                        <span class="fw-bold @(st.Status == "Completed" ? "text-decoration-line-through text-muted" : "text-dark")">@st.Title</span>
+                                <div class="border rounded-3 mb-2 overflow-hidden subtask-item">
+                                    <button class="w-100 d-flex justify-content-between align-items-center p-3 bg-transparent border-0 text-start subtask-toggle"
+                                            type="button" data-bs-toggle="collapse" data-bs-target="#subtask-@st.Id"
+                                            data-subtask-id="@st.Id" data-project-id="@st.ProjectId">
+                                        <span class="d-flex align-items-center gap-2">
+                                            <i class="bi @(st.Status == "Completed" ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-5"></i>
+                                            <span class="fw-bold @(st.Status == "Completed" ? "text-decoration-line-through text-muted" : "text-dark")">@st.Title</span>
+                                        </span>
+                                        <span class="d-flex align-items-center gap-2">
+                                            <span class="badge-status badge-@st.Status?.ToLower()">@TaskStatusDisplay.GetLabel(st.Status)</span>
+                                            <i class="bi bi-chevron-down small text-muted"></i>
+                                        </span>
+                                    </button>
+                                    <div id="subtask-@st.Id" class="collapse">
+                                        <div class="p-3 border-top bg-light subtask-panel-container" data-subtask-id="@st.Id">
+                                            <div class="text-muted small py-2"><i class="bi bi-hourglass-split me-1"></i>Loading...</div>
+                                        </div>
                                     </div>
-                                    <span class="badge-status badge-@st.Status?.ToLower()">@TaskStatusDisplay.GetLabel(st.Status)</span>
                                 </div>
                             }
                         </div>
@@ -211,6 +246,11 @@
                         <li class="nav-item" role="presentation">
                             <button class="nav-link rounded-pill fw-bold px-3" data-bs-toggle="pill" data-bs-target="#tab-attachments" type="button" role="tab">
                                 <i class="bi bi-paperclip me-1"></i> Attachments (@attachments.Count)
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rounded-pill fw-bold px-3" data-bs-toggle="pill" data-bs-target="#tab-activity" type="button" role="tab">
+                                <i class="bi bi-clock-history me-1"></i> Activity (@activityLogs.Count)
                             </button>
                         </li>
                     </ul>
@@ -338,6 +378,41 @@
                                     <input type="file" name="file" id="attachmentFileInput" class="d-none" onchange="this.form.submit()" />
                                 </label>
                             </form>
+                        </div>
+
+                        <!-- Activity Tab -->
+                        <div class="tab-pane fade" id="tab-activity" role="tabpanel">
+                            @if (activityLogs.Any())
+                            {
+                                <ul class="list-unstyled mb-0" style="max-height: 420px; overflow-y: auto;">
+                                    @foreach (var log in activityLogs)
+                                    {
+                                        var fromSubtask = log.TaskId.HasValue && log.TaskId.Value != Model.Id && subtaskTitleLookup.ContainsKey(log.TaskId.Value);
+                                        <li class="d-flex gap-3 pb-3">
+                                            <div class="flex-shrink-0">
+                                                <i class="bi @ActivityIcon(log.Action) fs-5"></i>
+                                            </div>
+                                            <div class="flex-grow-1 border-bottom pb-3">
+                                                <div>
+                                                    <span class="fw-bold text-dark">@ActorName(log.ActorUserId, log.ActorName)</span>
+                                                    <span class="text-secondary">@log.Details</span>
+                                                    @if (fromSubtask)
+                                                    {
+                                                        <span class="badge bg-light text-dark border rounded-pill ms-1 small">via subtask: @subtaskTitleLookup[log.TaskId!.Value]</span>
+                                                    }
+                                                </div>
+                                                <span class="extra-small text-muted">@log.Timestamp.ToString("MMM dd, yyyy HH:mm")</span>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <div class="text-center py-4 text-muted bg-light rounded-3 mb-3">
+                                    <p class="small mb-0">No activity recorded for this task yet.</p>
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>

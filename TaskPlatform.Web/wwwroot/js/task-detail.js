@@ -27,6 +27,43 @@
         });
     }
 
+    // Shows a dismissible inline message right after `anchor` instead of a blocking
+    // browser alert() — used for permission-denied and validation errors so the user
+    // sees the reason next to the control they just used, and can keep working.
+    function showInlineFeedback(anchor, message, isError) {
+        if (!anchor || !anchor.parentElement) {
+            return;
+        }
+
+        var existing = anchor.parentElement.querySelector(':scope > .inline-feedback');
+        if (existing) {
+            existing.remove();
+        }
+
+        var el = document.createElement('div');
+        el.className = 'inline-feedback alert ' + (isError ? 'alert-danger' : 'alert-success') + ' py-2 px-3 mt-2 mb-0 small d-flex justify-content-between align-items-center';
+
+        var text = document.createElement('span');
+        text.textContent = message;
+        el.appendChild(text);
+
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn-close ms-2';
+        closeBtn.style.fontSize = '0.65rem';
+        closeBtn.setAttribute('aria-label', 'Dismiss');
+        closeBtn.addEventListener('click', function () { el.remove(); });
+        el.appendChild(closeBtn);
+
+        anchor.insertAdjacentElement('afterend', el);
+
+        setTimeout(function () {
+            if (el.isConnected) {
+                el.remove();
+            }
+        }, isError ? 6000 : 3000);
+    }
+
     initStatusForms();
     initChecklist();
     initSubtaskPanels();
@@ -47,7 +84,7 @@
             postJson('/Task/UpdateStatusAjax', { TaskId: taskId, Status: select.value })
                 .then(function (result) {
                     if (!result.success) {
-                        alert(result.message || 'Could not update status.');
+                        showInlineFeedback(form, result.message || 'Could not update status.', true);
                         return;
                     }
 
@@ -58,18 +95,14 @@
                         reloadSubtaskPanel(subtaskId);
                     } else {
                         var statusDisplay = document.getElementById('statusDisplay');
-                        var feedback = document.getElementById('statusUpdateFeedback');
                         if (statusDisplay) {
                             statusDisplay.innerHTML = '<span class="badge-status ' + (badgeClasses[status] || 'badge-todo') + '">' + (statusLabels[status] || status) + '</span>';
                         }
-                        if (feedback) {
-                            feedback.classList.remove('d-none');
-                            setTimeout(function () { feedback.classList.add('d-none'); }, 2000);
-                        }
+                        showInlineFeedback(form, 'Status updated.', false);
                     }
                 })
                 .catch(function () {
-                    alert('Could not update status.');
+                    showInlineFeedback(form, 'Could not update status. Please try again.', true);
                 });
         });
     }
@@ -125,6 +158,7 @@
 
             var itemId = checkbox.getAttribute('data-item-id');
             var label = document.querySelector('label[for="chk-' + itemId + '"]');
+            var row = document.querySelector('.checklist-item[data-item-id="' + itemId + '"]');
 
             postJson('/Task/ToggleChecklistItemAjax/' + itemId, {})
                 .then(function (result) {
@@ -137,12 +171,12 @@
                         updateChecklistProgress();
                     } else {
                         checkbox.checked = !checkbox.checked;
-                        alert(result.message || 'Could not update checklist item.');
+                        showInlineFeedback(row, result.message || 'Could not update checklist item.', true);
                     }
                 })
                 .catch(function () {
                     checkbox.checked = !checkbox.checked;
-                    alert('Could not update checklist item.');
+                    showInlineFeedback(row, 'Could not update checklist item. Please try again.', true);
                 });
         });
 
@@ -153,19 +187,19 @@
             }
 
             var itemId = deleteBtn.getAttribute('data-item-id');
-            var row = document.querySelector('.checklist-item[data-item-id="' + itemId + '"]');
+            var deleteRow = document.querySelector('.checklist-item[data-item-id="' + itemId + '"]');
 
             postJson('/Task/DeleteChecklistItemAjax/' + itemId, {})
                 .then(function (result) {
-                    if (result.success && row) {
-                        row.remove();
+                    if (result.success && deleteRow) {
+                        deleteRow.remove();
                         updateChecklistProgress();
                     } else if (!result.success) {
-                        alert(result.message || 'Could not delete checklist item.');
+                        showInlineFeedback(deleteRow, result.message || 'Could not delete checklist item.', true);
                     }
                 })
                 .catch(function () {
-                    alert('Could not delete checklist item.');
+                    showInlineFeedback(deleteRow, 'Could not delete checklist item. Please try again.', true);
                 });
         });
     }

@@ -159,8 +159,26 @@ namespace TaskPlatform.Web.Controllers
 
             var assignees = assigneesResp.Data ?? new List<TaskAssigneeViewModel>();
             var projectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
+            var subtasks = subtasksResp.Data ?? new List<SubtaskViewModel>();
 
-            ViewBag.Subtasks = subtasksResp.Data ?? new List<SubtaskViewModel>();
+            // Merge in each subtask's own activity so the parent's Activity tab shows the full picture,
+            // since subtask actions are logged against the subtask's own TaskId, not the parent's.
+            var activityLogs = new List<TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel>(
+                activityResp.Data ?? new List<TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel>());
+
+            foreach (var st in subtasks)
+            {
+                var subtaskActivityResp = await _apiService.GetTaskActivityAsync(st.Id.ToString(), token);
+                if (subtaskActivityResp.Data != null)
+                {
+                    activityLogs.AddRange(subtaskActivityResp.Data);
+                }
+            }
+
+            activityLogs = activityLogs.OrderByDescending(a => a.Timestamp).ToList();
+
+            ViewBag.Subtasks = subtasks;
+            ViewBag.SubtaskTitleLookup = subtasks.ToDictionary(st => st.Id, st => st.Title);
             ViewBag.Assignees = assignees;
             ViewBag.Watchers = watchersResp.Data ?? new List<TaskWatcherViewModel>();
             ViewBag.ChecklistItems = checklistResp.Data ?? new List<ChecklistItemViewModel>();
@@ -168,7 +186,7 @@ namespace TaskPlatform.Web.Controllers
             ViewBag.Comments = commentsResp.Data ?? new List<CommentViewModel>();
             ViewBag.Attachments = attachmentsResp.Data ?? new List<AttachmentViewModel>();
             ViewBag.ProjectMembers = projectMembers;
-            ViewBag.ActivityLogs = activityResp.Data ?? new List<TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel>();
+            ViewBag.ActivityLogs = activityLogs;
             ViewBag.CanModify = await ComputeCanModifyAsync(response.Data.ProjectId, assignees, projectMembers, token);
 
             return View(response.Data);
@@ -188,6 +206,7 @@ namespace TaskPlatform.Web.Controllers
             var checklistResp = await _apiService.GetChecklistItemsAsync(id.ToString(), token);
             var assigneesResp = await _apiService.GetTaskAssigneesAsync(id.ToString(), token);
             var membersResp = await _apiService.GetProjectMembersAsync(projectId.ToString(), token);
+            var activityResp = await _apiService.GetTaskActivityAsync(id.ToString(), token);
 
             var assignees = assigneesResp.Data ?? new List<TaskAssigneeViewModel>();
             var projectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
@@ -195,6 +214,7 @@ namespace TaskPlatform.Web.Controllers
             ViewBag.ChecklistItems = checklistResp.Data ?? new List<ChecklistItemViewModel>();
             ViewBag.Assignees = assignees;
             ViewBag.ProjectMembers = projectMembers;
+            ViewBag.ActivityLogs = activityResp.Data ?? new List<TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel>();
             ViewBag.CanModify = await ComputeCanModifyAsync(projectId, assignees, projectMembers, token);
 
             return PartialView("_SubtaskPanel", subtaskResp.Data);

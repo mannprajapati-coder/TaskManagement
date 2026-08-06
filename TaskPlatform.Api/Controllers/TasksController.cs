@@ -68,7 +68,14 @@ namespace TaskPlatform.Api.Controllers
         public async Task<ActionResult<ApiResponse<TaskViewModel>>> Update([FromBody] UpdateTaskRequestViewModel model)
         {
             var userId = GetCurrentUserId();
+            var before = await _tasksService.GetTaskByIdAsync(model.TaskId);
             var result = await _tasksService.UpdateTaskAsync(userId, model);
+
+            if (before.DueDate != result.DueDate)
+            {
+                await NotifyDueDateChangeAsync(result, userId);
+            }
+
             await LogActivityAsync(userId, result.ProjectId, result.Id, "TaskUpdated", $"Updated task \"{result.Title}\".");
             return Ok(ApiResponse<TaskViewModel>.Ok(result, "Task updated successfully."));
         }
@@ -250,15 +257,46 @@ namespace TaskPlatform.Api.Controllers
 
         private async Task NotifyStatusChangeAsync(TaskViewModel task, Guid currentUserId)
         {
-            if (!task.PrimaryAssigneeUserId.HasValue)
+            var recipients = await GetNotificationRecipientsAsync(task);
+            foreach (var recipientId in recipients)
             {
-                return;
+                await NotifyUserAsync(recipientId, currentUserId,
+                    "Task status updated",
+                    $"\"{task.Title}\" status changed to {task.Status}.",
+                    $"/Task/Detail/{task.Id}");
+            }
+        }
+
+        private async Task NotifyDueDateChangeAsync(TaskViewModel task, Guid currentUserId)
+        {
+            var recipients = await GetNotificationRecipientsAsync(task);
+            var dueDateText = task.DueDate.HasValue ? task.DueDate.Value.ToString("MMM dd, yyyy") : "no due date";
+
+            foreach (var recipientId in recipients)
+            {
+                await NotifyUserAsync(recipientId, currentUserId,
+                    "Task due date changed",
+                    $"\"{task.Title}\" due date changed to {dueDateText}.",
+                    $"/Task/Detail/{task.Id}");
+            }
+        }
+
+        // BR-12-02: Watchers are notified of Status changes, new Comments, and due-date changes only.
+        private async Task<HashSet<Guid>> GetNotificationRecipientsAsync(TaskViewModel task)
+        {
+            var recipients = new HashSet<Guid>();
+            if (task.PrimaryAssigneeUserId.HasValue)
+            {
+                recipients.Add(task.PrimaryAssigneeUserId.Value);
             }
 
-            await NotifyUserAsync(task.PrimaryAssigneeUserId.Value, currentUserId,
-                "Task status updated",
-                $"\"{task.Title}\" status changed to {task.Status}.",
-                $"/Task/Detail/{task.Id}");
+            var watchers = await _tasksService.GetTaskWatchersAsync(task.Id);
+            foreach (var watcher in watchers)
+            {
+                recipients.Add(watcher.UserId);
+            }
+
+            return recipients;
         }
 
         private async Task LogActivityAsync(Guid actorUserId, Guid projectId, Guid? taskId, string action, string details)
