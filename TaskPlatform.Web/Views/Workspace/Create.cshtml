@@ -3,33 +3,44 @@
     ViewData["Title"] = "Create Workspace";
 }
 
-<div class="auth-wrapper">
-    <div class="auth-card">
-        <div class="text-center mb-4">
-            <h3 class="fw-bold text-dark mb-1">Create Workspace</h3>
-            <p class="text-muted small">Set up a new workspace for your projects and team</p>
+<div class="py-4">
+    <div class="card border-0 shadow-xl rounded-4 overflow-hidden bg-white max-w-2xl mx-auto" style="max-width: 600px;">
+        <div class="p-4 p-md-5 bg-gradient text-white" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="avatar bg-white text-primary fw-extrabold shadow-sm" style="width: 54px; height: 54px; font-size: 1.5rem;">
+                    <i class="bi bi-diagram-3-fill"></i>
+                </div>
+                <div>
+                    <h3 class="fw-extrabold text-white mb-1">Create New Workspace</h3>
+                    <p class="text-white text-opacity-90 small mb-0">Set up a dedicated workspace for your team projects.</p>
+                </div>
+            </div>
         </div>
 
-        <form asp-action="Create" method="post">
-            @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+        <div class="card-body p-4 p-md-5">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger small p-2 rounded-3 mb-3"></div>
 
-            <div class="mb-3">
-                <label asp-for="Name" class="form-label small fw-semibold">Workspace Name</label>
-                <input asp-for="Name" class="form-control" placeholder="e.g. Acme Engineering" />
-                <span asp-validation-for="Name" class="text-danger small"></span>
-            </div>
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label small fw-bold text-dark">Workspace Name</label>
+                    <input asp-for="Name" class="form-control" placeholder="e.g. Acme Engineering" required />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
 
-            <div class="mb-4">
-                <label asp-for="Description" class="form-label small fw-semibold">Description</label>
-                <textarea asp-for="Description" class="form-control" rows="3" placeholder="Brief workspace description..."></textarea>
-                <span asp-validation-for="Description" class="text-danger small"></span>
-            </div>
+                <div class="mb-4">
+                    <label asp-for="Description" class="form-label small fw-bold text-dark">Description</label>
+                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Brief summary of projects in this workspace..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger small"></span>
+                </div>
 
-            <div class="d-flex gap-2">
-                <a asp-action="Index" class="btn btn-outline-secondary w-50">Cancel</a>
-                <button type="submit" class="btn btn-gradient w-50">Create <i class="bi bi-check-lg"></i></button>
-            </div>
-        </form>
+                <div class="d-flex gap-3 pt-2">
+                    <a asp-action="Index" class="btn btn-outline-custom w-50 py-2">Cancel</a>
+                    <button type="submit" class="btn btn-gradient w-50 py-2 shadow-sm font-semibold">
+                        Create Workspace <i class="bi bi-check-lg ms-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>

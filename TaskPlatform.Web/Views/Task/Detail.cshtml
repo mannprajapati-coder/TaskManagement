@@ -17,137 +17,104 @@
     var checklistDone = checklistItems.Count(c => c.IsCompleted);
     var checklistPct = checklistItems.Count > 0 ? (int)Math.Round(100.0 * checklistDone / checklistItems.Count) : 0;
     var canModify = ViewBag.CanModify as bool? ?? false;
-
-    string FormatFileSize(long bytes)
-    {
-        if (bytes >= 1024 * 1024) return $"{bytes / (1024.0 * 1024):0.#} MB";
-        if (bytes >= 1024) return $"{bytes / 1024.0:0.#} KB";
-        return $"{bytes} B";
-    }
-
-    string FileIcon(string contentType)
-    {
-        if (string.IsNullOrEmpty(contentType)) return "bi-file-earmark";
-        if (contentType.StartsWith("image/")) return "bi-file-earmark-image";
-        if (contentType == "application/pdf") return "bi-file-earmark-pdf";
-        if (contentType.Contains("word")) return "bi-file-earmark-word";
-        if (contentType.Contains("sheet") || contentType.Contains("excel")) return "bi-file-earmark-excel";
-        if (contentType.StartsWith("text/")) return "bi-file-earmark-text";
-        if (contentType.Contains("zip")) return "bi-file-earmark-zip";
-        return "bi-file-earmark";
-    }
-
-    string ActorName(Guid actorUserId, string fallback)
-    {
-        var member = projectMembers.FirstOrDefault(m => m.UserId == actorUserId);
-        return member?.FullName ?? (string.IsNullOrEmpty(fallback) || fallback == "User" ? "A team member" : fallback);
-    }
-
-    string ActivityIcon(string action) => action switch
-    {
-        "TaskCreated" => "bi-plus-circle text-success",
-        "TaskUpdated" => "bi-pencil-square text-primary",
-        "StatusChanged" => "bi-arrow-repeat text-warning",
-        "TaskDeleted" => "bi-trash text-danger",
-        "SubtaskCreated" => "bi-diagram-2 text-info",
-        "AssigneeAdded" => "bi-person-plus text-primary",
-        "AssigneeRemoved" => "bi-person-dash text-danger",
-        "ChecklistItemAdded" => "bi-check2-square text-success",
-        "RecurringRuleSet" => "bi-arrow-repeat text-info",
-        "CommentAdded" => "bi-chat-dots text-primary",
-        "AttachmentAdded" => "bi-paperclip text-secondary",
-        _ => "bi-clock-history text-muted"
-    };
+    var pendingSubtasks = subtasks.Count(st => st.Status != "Completed" && st.Status != "Cancelled");
 }
 
-<div class="container py-4">
+<div class="py-2">
     <div class="row justify-content-center">
-        <div class="col-lg-9">
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div class="col-lg-10">
+            <!-- Header Metadata Card -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-3">
                         <div>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill mb-2">Priority: @Model.Priority</span>
-                            <h3 class="fw-bold text-dark mb-1">@Model.Title</h3>
-                            <span class="extra-small text-muted" style="font-size: 0.75rem;">Created @Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge-status priority-@Model.Priority?.ToLower()">@Model.Priority Priority</span>
+                                <span class="badge-status badge-@Model.Status?.ToLower()">@TaskStatusDisplay.GetLabel(Model.Status)</span>
+                            </div>
+                            <h2 class="fw-extrabold text-dark mb-1">@Model.Title</h2>
+                            <div class="extra-small text-muted">
+                                <i class="bi bi-clock me-1"></i>Created @Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                            </div>
                         </div>
-                        <div class="d-flex gap-2">
+
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
                             <form asp-action="ToggleWatcher" method="post" class="d-inline">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@Model.Id" />
-                                <button type="submit" class="btn btn-sm btn-outline-warning rounded-pill px-3" title="Watch Task">
-                                    <i class="bi bi-eye"></i> Watch (@watchers.Count)
+                                <button type="submit" class="btn btn-sm btn-outline-custom rounded-pill px-3" title="Watch Task">
+                                    <i class="bi bi-eye text-warning me-1"></i> Watch (@watchers.Count)
                                 </button>
                             </form>
-                            <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn btn-sm btn-outline-secondary rounded-pill px-3"><i class="bi bi-arrow-left"></i> Back to Tasks</a>
+                            <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn btn-sm btn-outline-custom rounded-pill px-3">
+                                <i class="bi bi-arrow-left me-1"></i> Task Board
+                            </a>
                         </div>
                     </div>
 
-                    <p class="text-secondary mb-4">@(string.IsNullOrEmpty(Model.Description) ? "No detailed description." : Model.Description)</p>
+                    <p class="text-secondary lead fs-6 mb-4">@(string.IsNullOrEmpty(Model.Description) ? "No detailed description provided." : Model.Description)</p>
 
-                    <hr class="my-3 text-muted opacity-25" />
+                    <hr class="my-4 text-muted opacity-25" />
 
+                    <!-- Quick Metrics Grid -->
                     <div class="row text-center g-3 mb-4">
-                        <div class="col-md-3">
+                        <div class="col-6 col-md-3">
                             <div class="p-3 bg-light rounded-3">
-                                <span class="extra-small text-muted d-block">Status</span>
-                                <strong class="text-dark" id="statusDisplay">
-                                    <span class="badge @TaskStatusDisplay.GetBadgeClass(Model.Status) rounded-pill">@TaskStatusDisplay.GetLabel(Model.Status)</span>
+                                <span class="extra-small text-muted d-block font-semibold">Status</span>
+                                <strong class="text-dark fs-6" id="statusDisplay">
+                                    @TaskStatusDisplay.GetLabel(Model.Status)
                                 </strong>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-6 col-md-3">
                             <div class="p-3 bg-light rounded-3">
-                                <span class="extra-small text-muted d-block">Due Date</span>
-                                <strong class="text-dark">@(Model.DueDate?.ToString("MMM dd, yyyy") ?? "Not Set")</strong>
+                                <span class="extra-small text-muted d-block font-semibold">Due Date</span>
+                                <strong class="text-dark fs-6">@(Model.DueDate?.ToString("MMM dd, yyyy") ?? "Not Set")</strong>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-6 col-md-3">
                             <div class="p-3 bg-light rounded-3">
-                                <span class="extra-small text-muted d-block">Est. Hours</span>
-                                <strong class="text-dark">@(Model.EstimatedHours ?? 0) hrs</strong>
+                                <span class="extra-small text-muted d-block font-semibold">Est. Hours</span>
+                                <strong class="text-dark fs-6">@(Model.EstimatedHours ?? 0) hrs</strong>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-6 col-md-3">
                             <div class="p-3 bg-light rounded-3">
-                                <span class="extra-small text-muted d-block">Actual Hours</span>
-                                <strong class="text-dark">@(Model.ActualHours ?? 0) hrs</strong>
+                                <span class="extra-small text-muted d-block font-semibold">Actual Hours</span>
+                                <strong class="text-dark fs-6">@(Model.ActualHours ?? 0) hrs</strong>
                             </div>
                         </div>
                     </div>
 
-                    <h5 class="fw-bold mb-3">Update Status</h5>
+                    <!-- Update Status Bar -->
                     @if (canModify)
                     {
-                        <form id="statusForm" asp-action="UpdateStatus" method="post" class="d-flex gap-2 mb-4 align-items-center task-status-form">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="TaskId" value="@Model.Id" />
-                            <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                        <div class="bg-light p-3 rounded-4 border d-flex flex-wrap align-items-center justify-content-between gap-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="statusSelect" class="small fw-bold text-dark mb-0">Change Task Status:</label>
+                                <form id="statusForm" asp-action="UpdateStatus" method="post" class="d-flex gap-2 align-items-center task-status-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="TaskId" value="@Model.Id" />
+                                    <input type="hidden" name="projectId" value="@Model.ProjectId" />
 
-                            <select name="Status" id="statusSelect" class="form-select rounded-pill" style="max-width: 240px;">
-                                <option value="Todo" selected="@(Model.Status == "Todo")">Todo</option>
-                                <option value="InProgress" selected="@(Model.Status == "InProgress")">In Progress</option>
-                                <option value="InReview" selected="@(Model.Status == "InReview")">In Review</option>
-                                <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
-                                <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
-                            </select>
-                            <button type="submit" class="btn btn-gradient rounded-pill px-4">Update Status</button>
-                            <span id="statusUpdateFeedback" class="extra-small text-success d-none"><i class="bi bi-check-circle-fill me-1"></i>Updated</span>
-                        </form>
-                    }
-                    else
-                    {
-                        <p class="text-muted small mb-4"><i class="bi bi-lock-fill me-1"></i>Only an assignee, the project owner, or the workspace owner can update this task.</p>
-                    }
+                                    <select name="Status" id="statusSelect" class="form-select form-select-sm rounded-pill shadow-xs" style="min-width: 180px;">
+                                        <option value="Todo" selected="@(Model.Status == "Todo")">Todo</option>
+                                        <option value="InProgress" selected="@(Model.Status == "InProgress")">In Progress</option>
+                                        <option value="InReview" selected="@(Model.Status == "InReview")">In Review</option>
+                                        <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
+                                        <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-gradient rounded-pill px-3 shadow-xs">Apply</button>
+                                </form>
+                            </div>
 
-                    @if (canModify)
-                    {
-                        <div class="d-flex justify-content-end">
                             <form asp-action="Delete" method="post" class="d-inline">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@Model.Id" />
                                 <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                                <button type="submit" onclick="return confirm('Delete this task and all its subtasks?')" class="btn btn-outline-danger btn-sm rounded-pill px-3">Delete Task</button>
+                                <button type="submit" onclick="return confirm('Delete this task and all its subtasks?')" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                    <i class="bi bi-trash me-1"></i> Delete Task
+                                </button>
                             </form>
                         </div>
                     }
@@ -155,187 +122,133 @@
             </div>
 
             <!-- Subtasks Section -->
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-diagram-2 me-2 text-primary"></i> Subtasks (@subtasks.Count)</h5>
+            <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-diagram-2-fill text-primary me-2"></i>Linked Subtasks (@subtasks.Count)
+                        </h5>
+
+                        @if (pendingSubtasks > 0)
+                        {
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill small">
+                                <i class="bi bi-exclamation-circle me-1"></i> @pendingSubtasks Pending Subtask(s)
+                            </span>
+                        }
+                        else if (subtasks.Any())
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small">
+                                <i class="bi bi-check-circle-fill me-1"></i> All Subtasks Completed
+                            </span>
+                        }
+                    </div>
+
+                    @if (pendingSubtasks > 0)
+                    {
+                        <div class="alert alert-warning small p-3 rounded-3 mb-3 border-0 shadow-xs">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <strong>Note:</strong> All subtasks must be completed before marking this parent task as <strong>Completed</strong>.
+                        </div>
+                    }
 
                     @if (subtasks.Any())
                     {
-                        <div class="accordion mb-4" id="subtaskAccordion">
+                        <div class="list-group list-group-flush mb-4 border rounded-3 overflow-hidden">
                             @foreach (var st in subtasks)
                             {
-                                <div class="accordion-item border-0 border-bottom subtask-item">
-                                    <h2 class="accordion-header">
-                                        <button class="accordion-button collapsed bg-transparent px-0 py-2 shadow-none subtask-toggle"
-                                                type="button" data-bs-toggle="collapse" data-bs-target="#subtask-@st.Id"
-                                                data-subtask-id="@st.Id" data-project-id="@st.ProjectId">
-                                            <span class="fw-semibold @(st.Status == "Completed" ? "text-decoration-line-through text-muted" : "text-dark") me-2">@st.Title</span>
-                                            <span class="badge @TaskStatusDisplay.GetBadgeClass(st.Status) rounded-pill">@TaskStatusDisplay.GetLabel(st.Status)</span>
-                                        </button>
-                                    </h2>
-                                    <div id="subtask-@st.Id" class="accordion-collapse collapse" data-bs-parent="#subtaskAccordion">
-                                        <div class="accordion-body px-0 subtask-panel-container" data-subtask-id="@st.Id">
-                                            <div class="text-muted small py-2"><i class="bi bi-hourglass-split me-1"></i>Loading...</div>
-                                        </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center p-3 bg-transparent border-bottom">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi @(st.Status == "Completed" ? "bi-check-circle-fill text-success" : "bi-circle text-muted") fs-5"></i>
+                                        <span class="fw-bold @(st.Status == "Completed" ? "text-decoration-line-through text-muted" : "text-dark")">@st.Title</span>
                                     </div>
+                                    <span class="badge-status badge-@st.Status?.ToLower()">@TaskStatusDisplay.GetLabel(st.Status)</span>
                                 </div>
                             }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted bg-light rounded-3 mb-3">
+                            <p class="small mb-0">No subtasks created for this task yet.</p>
                         </div>
                     }
 
                     @if (canModify)
                     {
-                        <form asp-action="CreateSubtask" method="post" class="mt-3">
+                        <form asp-action="CreateSubtask" method="post" class="mt-2">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="ParentTaskId" value="@Model.Id" />
                             <input type="hidden" name="ProjectId" value="@Model.ProjectId" />
                             <div class="input-group">
-                                <input type="text" name="Title" class="form-control form-control-sm" placeholder="Add a new subtask..." required />
-                                <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Add Subtask</button>
+                                <input type="text" name="Title" class="form-control" placeholder="Add a new subtask..." required />
+                                <button type="submit" class="btn btn-gradient px-4 font-semibold"><i class="bi bi-plus-lg me-1"></i> Add Subtask</button>
                             </div>
                         </form>
                     }
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-body p-4">
-                    <ul class="nav nav-pills gap-1 mb-4" id="taskWidgetTabs" role="tablist">
+            <!-- Tabbed Collaboration Widgets -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+                <div class="card-body p-4 p-md-5">
+                    <ul class="nav nav-pills gap-2 mb-4 border-bottom pb-3" id="taskWidgetTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-assignees" type="button" role="tab">
-                                <i class="bi bi-people me-1"></i> Assignees
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-checklist" type="button" role="tab">
+                            <button class="nav-link active rounded-pill fw-bold px-3" data-bs-toggle="pill" data-bs-target="#tab-checklist" type="button" role="tab">
                                 <i class="bi bi-check2-square me-1"></i> Checklist
-                                @if (checklistItems.Count > 0)
-                                {
-                                    <span class="badge bg-light text-dark border rounded-pill ms-1 badge-sm">@checklistDone/@checklistItems.Count</span>
-                                }
+                                <span id="checklistCountBadge" class="badge bg-white text-dark border rounded-circle ms-1">@checklistDone/@checklistItems.Count</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-comments" type="button" role="tab">
-                                <i class="bi bi-chat-dots me-1"></i> Comments
-                                @if (comments.Count > 0)
-                                {
-                                    <span class="badge bg-light text-dark border rounded-pill ms-1 badge-sm">@comments.Count</span>
-                                }
+                            <button class="nav-link rounded-pill fw-bold px-3" data-bs-toggle="pill" data-bs-target="#tab-assignees" type="button" role="tab">
+                                <i class="bi bi-people me-1"></i> Assignees (@assignees.Count)
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-attachments" type="button" role="tab">
-                                <i class="bi bi-paperclip me-1"></i> Attachments
-                                @if (attachments.Count > 0)
-                                {
-                                    <span class="badge bg-light text-dark border rounded-pill ms-1 badge-sm">@attachments.Count</span>
-                                }
+                            <button class="nav-link rounded-pill fw-bold px-3" data-bs-toggle="pill" data-bs-target="#tab-comments" type="button" role="tab">
+                                <i class="bi bi-chat-dots me-1"></i> Comments (@comments.Count)
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-recurring" type="button" role="tab">
-                                <i class="bi bi-arrow-repeat me-1"></i> Recurring
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-activity" type="button" role="tab">
-                                <i class="bi bi-clock-history me-1"></i> Activity
-                                @if (activityLogs.Count > 0)
-                                {
-                                    <span class="badge bg-light text-dark border rounded-pill ms-1 badge-sm">@activityLogs.Count</span>
-                                }
+                            <button class="nav-link rounded-pill fw-bold px-3" data-bs-toggle="pill" data-bs-target="#tab-attachments" type="button" role="tab">
+                                <i class="bi bi-paperclip me-1"></i> Attachments (@attachments.Count)
                             </button>
                         </li>
                     </ul>
 
                     <div class="tab-content">
-                        <!-- Assignees -->
-                        <div class="tab-pane fade show active" id="tab-assignees" role="tabpanel">
-                            @if (assignees.Any())
-                            {
-                                <ul class="list-group list-group-flush mb-3">
-                                    @foreach (var a in assignees)
-                                    {
-                                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2 border-bottom">
-                                            <div>
-                                                <span class="fw-semibold text-dark">@a.FullName</span>
-                                                <span class="extra-small text-muted d-block">@a.Email</span>
-                                            </div>
-                                            <div class="d-flex align-items-center gap-2">
-                                                @if (a.IsPrimary)
-                                                {
-                                                    <span class="badge bg-primary-subtle text-primary border border-primary rounded-pill badge-sm">Primary</span>
-                                                }
-                                                @if (canModify)
-                                                {
-                                                    <form asp-action="RemoveAssignee" method="post" class="d-inline">
-                                                        @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="taskId" value="@Model.Id" />
-                                                        <input type="hidden" name="targetUserId" value="@a.UserId" />
-                                                        <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Remove assignee"><i class="bi bi-x-lg"></i></button>
-                                                    </form>
-                                                }
-                                            </div>
-                                        </li>
-                                    }
-                                </ul>
-                            }
-                            else
-                            {
-                                <p class="text-muted small mb-3">No one is assigned to this task yet.</p>
-                            }
-
-                            @if (canModify && unassignedMembers.Any())
-                            {
-                                <form asp-action="AddAssignee" method="post" class="d-flex gap-2 align-items-center">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="TaskId" value="@Model.Id" />
-                                    <select name="UserId" class="form-select form-select-sm" style="max-width: 260px;" required>
-                                        @foreach (var m in unassignedMembers)
-                                        {
-                                            <option value="@m.UserId">@m.FullName (@m.Email)</option>
-                                        }
-                                    </select>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="IsPrimary" value="true" id="isPrimaryCheck" />
-                                        <label class="form-check-label extra-small" for="isPrimaryCheck">Primary</label>
-                                    </div>
-                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Add</button>
-                                </form>
-                            }
-                            else if (!projectMembers.Any())
-                            {
-                                <p class="text-muted small mb-0">No project members available to assign.</p>
-                            }
-                        </div>
-
-                        <!-- Checklist -->
-                        <div class="tab-pane fade" id="tab-checklist" role="tabpanel">
+                        <!-- Checklist Tab -->
+                        <div class="tab-pane fade show active" id="tab-checklist" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small font-semibold text-secondary">Checklist Completion Rate</span>
+                                <span id="checklistPctText" class="small font-bold text-primary">@checklistPct% Done</span>
+                            </div>
+                            <div class="progress progress-sm rounded-pill mb-4">
+                                <div class="progress-bar progress-bar-gradient" role="progressbar" style="width: @checklistPct%;" aria-valuenow="@checklistPct" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            
                             @if (checklistItems.Any())
                             {
-                                <div class="progress mb-3" style="height: 8px;">
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: @checklistPct%;" aria-valuenow="@checklistPct" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                                <ul class="list-group list-group-flush mb-3" id="checklistList">
+                                <div class="list-group list-group-flush mb-4 border rounded-3 overflow-hidden">
                                     @foreach (var item in checklistItems)
                                     {
-                                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2 border-bottom checklist-item" data-item-id="@item.Id">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center p-3 bg-transparent border-bottom checklist-item" data-item-id="@item.Id">
                                             <div class="form-check">
                                                 <input class="form-check-input checklist-toggle" type="checkbox" data-item-id="@item.Id" id="chk-@item.Id" @(item.IsCompleted ? "checked" : "") disabled="@(!canModify)" />
-                                                <label class="form-check-label @(item.IsCompleted ? "text-decoration-line-through text-muted" : "text-dark")" for="chk-@item.Id">@item.Title</label>
+                                                <label class="form-check-label fw-medium @(item.IsCompleted ? "text-decoration-line-through text-muted" : "text-dark")" for="chk-@item.Id">@item.Title</label>
                                             </div>
                                             @if (canModify)
                                             {
-                                                <button type="button" class="btn btn-sm btn-link text-danger p-0 checklist-delete" data-item-id="@item.Id" title="Delete item"><i class="bi bi-x-lg"></i></button>
+                                                <button type="button" class="btn btn-sm btn-link text-danger p-0 checklist-delete" data-item-id="@item.Id" title="Delete item"><i class="bi bi-trash"></i></button>
                                             }
-                                        </li>
+                                        </div>
                                     }
-                                </ul>
+                                </div>
                             }
                             else
                             {
-                                <p class="text-muted small mb-3">No checklist items yet.</p>
+                                <div class="text-center py-4 text-muted bg-light rounded-3 mb-3">
+                                    <p class="small mb-0">No checklist items added yet.</p>
+                                </div>
                             }
 
                             @if (canModify)
@@ -344,166 +257,87 @@
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="TaskId" value="@Model.Id" />
                                     <div class="input-group">
-                                        <input type="text" name="Title" class="form-control form-control-sm" placeholder="Add a checklist item..." required maxlength="200" />
-                                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Add</button>
+                                        <input type="text" name="Title" class="form-control" placeholder="Add a checklist item..." required maxlength="200" />
+                                        <button type="submit" class="btn btn-gradient px-4 font-semibold"><i class="bi bi-plus-lg me-1"></i> Add Item</button>
                                     </div>
                                 </form>
                             }
                         </div>
 
-                        <!-- Comments -->
-                        <div class="tab-pane fade" id="tab-comments" role="tabpanel">
-                            @if (comments.Any())
+                        <!-- Assignees Tab -->
+                        <div class="tab-pane fade" id="tab-assignees" role="tabpanel">
+                            @if (assignees.Any())
                             {
-                                <div class="mb-3" style="max-height: 360px; overflow-y: auto;">
-                                    @foreach (var c in comments)
+                                <div class="list-group list-group-flush mb-4 border rounded-3 overflow-hidden">
+                                    @foreach (var a in assignees)
                                     {
-                                        <div class="d-flex justify-content-between align-items-start border-bottom py-2">
-                                            <div>
-                                                <span class="fw-semibold text-dark">@c.AuthorName</span>
-                                                <span class="extra-small text-muted ms-2">@c.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
-                                                <p class="text-secondary mb-0 mt-1">@c.CommentText</p>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center p-3 bg-transparent border-bottom">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="avatar avatar-sm">@(a.FullName.Substring(0, 1).ToUpper())</div>
+                                                <div>
+                                                    <h6 class="fw-bold text-dark mb-0">@a.FullName</h6>
+                                                    <span class="extra-small text-muted">@a.Email</span>
+                                                </div>
                                             </div>
-                                            @if (c.UserId.ToString() == currentUserId)
-                                            {
-                                                <form asp-action="DeleteComment" method="post" class="d-inline">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="id" value="@c.Id" />
-                                                    <input type="hidden" name="taskId" value="@Model.Id" />
-                                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Delete comment"><i class="bi bi-trash"></i></button>
-                                                </form>
-                                            }
+                                            <div class="d-flex align-items-center gap-2">
+                                                @if (a.IsPrimary)
+                                                {
+                                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3">Primary Assignee</span>
+                                                }
+                                            </div>
                                         </div>
                                     }
                                 </div>
                             }
                             else
                             {
-                                <p class="text-muted small mb-3">No comments yet. Start the discussion below.</p>
+                                <div class="text-center py-4 text-muted bg-light rounded-3 mb-3">
+                                    <p class="small mb-0">No assignees assigned to this task yet.</p>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Comments Tab -->
+                        <div class="tab-pane fade" id="tab-comments" role="tabpanel">
+                            @if (comments.Any())
+                            {
+                                <div class="mb-4" style="max-height: 360px; overflow-y: auto;">
+                                    @foreach (var c in comments)
+                                    {
+                                        <div class="d-flex gap-3 border-bottom py-3">
+                                            <div class="avatar avatar-sm">@(c.AuthorName?.Substring(0, 1).ToUpper() ?? "U")</div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <h6 class="fw-bold text-dark mb-0">@c.AuthorName</h6>
+                                                    <span class="extra-small text-muted">@c.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
+                                                </div>
+                                                <p class="text-secondary small mb-0 mt-1">@c.CommentText</p>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
                             }
 
                             <form asp-action="AddComment" method="post" class="mt-2">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="TaskId" value="@Model.Id" />
-                                <textarea name="CommentText" class="form-control form-control-sm mb-2" rows="2" maxlength="2000" placeholder="Write a comment..." required></textarea>
-                                <button type="submit" class="btn btn-sm btn-gradient rounded-pill px-3">Post Comment</button>
+                                <textarea name="CommentText" class="form-control mb-3" rows="3" maxlength="2000" placeholder="Write a comment..." required></textarea>
+                                <button type="submit" class="btn btn-gradient px-4 font-semibold">Post Comment</button>
                             </form>
                         </div>
 
-                        <!-- Attachments -->
+                        <!-- Attachments Tab -->
                         <div class="tab-pane fade" id="tab-attachments" role="tabpanel">
-                            <form asp-action="UploadAttachment" method="post" enctype="multipart/form-data" class="mb-3">
+                            <form asp-action="UploadAttachment" method="post" enctype="multipart/form-data" class="mb-4">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="taskId" value="@Model.Id" />
-                                <label id="attachmentDropzone" for="attachmentFileInput" class="d-block text-center border border-2 border-dashed rounded-4 p-4 text-muted" style="cursor: pointer;">
-                                    <i class="bi bi-cloud-arrow-up display-6 d-block mb-2"></i>
-                                    <span class="extra-small">Drag &amp; drop a file here, or click to browse (max 25 MB)</span>
-                                    <input id="attachmentFileInput" type="file" name="file" class="d-none" required />
+                                <label id="attachmentDropzone" for="attachmentFileInput" class="d-block text-center border border-2 border-dashed rounded-4 p-4 text-muted bg-light" style="cursor: pointer;">
+                                    <i class="bi bi-cloud-arrow-up display-5 text-primary d-block mb-2"></i>
+                                    <span class="fw-bold text-dark d-block">Upload File Attachment</span>
+                                    <span id="attachmentFileName" class="extra-small text-muted">Click or drag file here (max 25 MB)</span>
+                                    <input type="file" name="file" id="attachmentFileInput" class="d-none" onchange="this.form.submit()" />
                                 </label>
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <span id="attachmentFileName" class="extra-small text-muted"></span>
-                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-upload"></i> Upload</button>
-                                </div>
                             </form>
-
-                            @if (attachments.Any())
-                            {
-                                <ul class="list-group list-group-flush">
-                                    @foreach (var att in attachments)
-                                    {
-                                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2 border-bottom">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <i class="bi @FileIcon(att.ContentType) fs-5 text-primary"></i>
-                                                <div>
-                                                    <span class="fw-semibold text-dark d-block">@att.FileName</span>
-                                                    <span class="extra-small text-muted">@FormatFileSize(att.FileSize) &middot; @att.UploadedByName &middot; @att.UploadedAt.ToString("MMM dd, yyyy")</span>
-                                                </div>
-                                            </div>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <a asp-action="DownloadAttachment" asp-route-id="@att.Id" asp-route-taskId="@Model.Id" class="btn btn-sm btn-link p-0" title="Download"><i class="bi bi-download"></i></a>
-                                                <form asp-action="DeleteAttachment" method="post" class="d-inline">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="id" value="@att.Id" />
-                                                    <input type="hidden" name="taskId" value="@Model.Id" />
-                                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Delete"><i class="bi bi-trash"></i></button>
-                                                </form>
-                                            </div>
-                                        </li>
-                                    }
-                                </ul>
-                            }
-                            else
-                            {
-                                <p class="text-muted small mb-0">No files attached yet.</p>
-                            }
-                        </div>
-
-                        <!-- Recurring Rule -->
-                        <div class="tab-pane fade" id="tab-recurring" role="tabpanel">
-                            @if (recurringRule != null)
-                            {
-                                <div class="mb-3">
-                                    <span class="badge @(recurringRule.IsActive ? "bg-success-subtle text-success border border-success" : "bg-secondary-subtle text-secondary border border-secondary") rounded-pill">
-                                        @(recurringRule.IsActive ? "Active" : "Inactive")
-                                    </span>
-                                    <span class="extra-small text-muted ms-2">Next run: @recurringRule.NextRunDate.ToString("MMM dd, yyyy HH:mm")</span>
-                                </div>
-                            }
-                            <form asp-action="SetRecurringRule" method="post">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="TaskId" value="@Model.Id" />
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label class="form-label extra-small text-muted">Recurrence Pattern</label>
-                                        <select name="RecurrencePattern" class="form-select form-select-sm">
-                                            <option value="Daily" selected="@(recurringRule?.RecurrencePattern == "Daily")">Daily</option>
-                                            <option value="Weekly" selected="@(recurringRule?.RecurrencePattern == "Weekly")">Weekly</option>
-                                            <option value="Monthly" selected="@(recurringRule?.RecurrencePattern == "Monthly")">Monthly</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label extra-small text-muted">Interval</label>
-                                        <input type="number" name="Interval" class="form-control form-control-sm" min="1" max="100" value="@(recurringRule?.Interval ?? 1)" />
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label extra-small text-muted">Days of Week</label>
-                                        <input type="text" name="DaysOfWeek" class="form-control form-control-sm" placeholder="e.g. Mon,Wed,Fri" value="@recurringRule?.DaysOfWeek" />
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label extra-small text-muted">Start Run Date</label>
-                                        <input type="datetime-local" name="StartRunDate" class="form-control form-control-sm" value="@((recurringRule?.NextRunDate ?? DateTime.UtcNow.AddDays(1)).ToString("yyyy-MM-ddTHH:mm"))" />
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn btn-sm btn-gradient rounded-pill px-3 mt-3">Save Recurring Rule</button>
-                            </form>
-                        </div>
-
-                        <!-- Activity -->
-                        <div class="tab-pane fade" id="tab-activity" role="tabpanel">
-                            @if (activityLogs.Any())
-                            {
-                                <ul class="list-unstyled mb-0" style="max-height: 420px; overflow-y: auto;">
-                                    @foreach (var log in activityLogs)
-                                    {
-                                        <li class="d-flex gap-3 pb-3">
-                                            <div class="flex-shrink-0">
-                                                <i class="bi @ActivityIcon(log.Action) fs-5"></i>
-                                            </div>
-                                            <div class="flex-grow-1 border-bottom pb-3">
-                                                <div>
-                                                    <span class="fw-semibold text-dark">@ActorName(log.ActorUserId, log.ActorName)</span>
-                                                    <span class="text-secondary">@log.Details</span>
-                                                </div>
-                                                <span class="extra-small text-muted">@log.Timestamp.ToString("MMM dd, yyyy HH:mm")</span>
-                                            </div>
-                                        </li>
-                                    }
-                                </ul>
-                            }
-                            else
-                            {
-                                <p class="text-muted small mb-0">No activity recorded for this task yet.</p>
-                            }
                         </div>
                     </div>
                 </div>

@@ -3,56 +3,67 @@
     ViewData["Title"] = "Create Project";
 }
 
-<div class="auth-wrapper py-4">
-    <div class="auth-card" style="max-width: 560px;">
-        <div class="text-center mb-4">
-            <h3 class="fw-bold text-dark mb-1">Create New Project</h3>
-            <p class="text-muted small">Define project scope, schedule, and client details</p>
+<div class="py-4">
+    <div class="card border-0 shadow-xl rounded-4 overflow-hidden bg-white max-w-2xl mx-auto" style="max-width: 650px;">
+        <div class="p-4 p-md-5 bg-gradient text-white" style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="avatar bg-white text-primary fw-extrabold shadow-sm" style="width: 54px; height: 54px; font-size: 1.5rem;">
+                    <i class="bi bi-folder-plus"></i>
+                </div>
+                <div>
+                    <h3 class="fw-extrabold text-white mb-1">Create New Project</h3>
+                    <p class="text-white text-opacity-90 small mb-0">Define project goals, timeline, and client deliverables.</p>
+                </div>
+            </div>
         </div>
 
-        <form asp-action="Create" method="post">
-            @Html.AntiForgeryToken()
-            <input type="hidden" asp-for="WorkspaceId" />
-            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+        <div class="card-body p-4 p-md-5">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="WorkspaceId" />
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger small p-2 rounded-3 mb-3"></div>
 
-            <div class="mb-3">
-                <label asp-for="Name" class="form-label small fw-semibold">Project Name</label>
-                <input asp-for="Name" class="form-control" placeholder="e.g. Website Redesign 2026" required />
-                <span asp-validation-for="Name" class="text-danger small"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Description" class="form-label small fw-semibold">Description</label>
-                <textarea asp-for="Description" class="form-control" rows="3" placeholder="Brief project summary..."></textarea>
-                <span asp-validation-for="Description" class="text-danger small"></span>
-            </div>
-
-            <div class="row g-2 mb-3">
-                <div class="col-md-6">
-                    <label asp-for="StartDate" class="form-label small fw-semibold">Start Date</label>
-                    <input type="date" asp-for="StartDate" class="form-control" />
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label small fw-bold text-dark">Project Name</label>
+                    <input asp-for="Name" class="form-control" placeholder="e.g. Mobile App Redesign 2026" required />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
                 </div>
-                <div class="col-md-6">
-                    <label asp-for="EndDate" class="form-label small fw-semibold">End Date</label>
-                    <input type="date" asp-for="EndDate" class="form-control" />
-                </div>
-            </div>
 
-            <div class="row g-2 mb-4">
-                <div class="col-md-6">
-                    <label asp-for="Budget" class="form-label small fw-semibold">Budget ($)</label>
-                    <input type="number" step="0.01" asp-for="Budget" class="form-control" placeholder="e.g. 15000" />
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label small fw-bold text-dark">Description</label>
+                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Brief project summary..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger small"></span>
                 </div>
-                <div class="col-md-6">
-                    <label asp-for="Client" class="form-label small fw-semibold">Client Name</label>
-                    <input asp-for="Client" class="form-control" placeholder="e.g. Acme Corp" />
-                </div>
-            </div>
 
-            <div class="d-flex gap-2">
-                <a asp-action="Index" asp-route-workspaceId="@Model.WorkspaceId" class="btn btn-outline-secondary w-50">Cancel</a>
-                <button type="submit" class="btn btn-gradient w-50">Create Project <i class="bi bi-check-lg"></i></button>
-            </div>
-        </form>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="StartDate" class="form-label small fw-bold text-dark">Start Date</label>
+                        <input type="date" asp-for="StartDate" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="EndDate" class="form-label small fw-bold text-dark">End Date</label>
+                        <input type="date" asp-for="EndDate" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label asp-for="Budget" class="form-label small fw-bold text-dark">Budget ($)</label>
+                        <input type="number" step="0.01" asp-for="Budget" class="form-control" placeholder="e.g. 15000" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Client" class="form-label small fw-bold text-dark">Client Name</label>
+                        <input asp-for="Client" class="form-control" placeholder="e.g. Acme Corp" />
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 pt-2">
+                    <a asp-action="Index" asp-route-workspaceId="@Model.WorkspaceId" class="btn btn-outline-custom w-50 py-2">Cancel</a>
+                    <button type="submit" class="btn btn-gradient w-50 py-2 shadow-sm font-semibold">
+                        Create Project <i class="bi bi-check-lg ms-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>

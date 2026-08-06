@@ -1,5 +1,7 @@
 /* =====================================================================
-   TaskManagement Platform - Modern Professional Design System
+   TaskManagement Platform - Minimalist 2-Color Design System
+   Primary Accent Color: #D96846 (Warm Terracotta Coral)
+   Dark Base Color:     #2F3020 (Forest Dark Charcoal)
    ===================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -7,35 +9,40 @@
 :root {
     --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     
-    /* Primary Color Palette */
-    --primary: #4f46e5;
-    --primary-hover: #4338ca;
-    --primary-light: #eef2ff;
-    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-    --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    /* Strict 2-Color Combination Palette */
+    --color-primary: #D96846;          /* Color 1: Terracotta Coral */
+    --color-primary-hover: #c45534;
+    --color-primary-light: #fdf3f0;
+    --color-primary-tint: #fae4dd;
 
-    /* Backgrounds & Neutral Colors */
-    --bg-surface: #f8fafc;
+    --color-dark: #2F3020;             /* Color 2: Forest Dark Charcoal */
+    --color-dark-light: #484936;
+    --color-dark-tint: #f5f6f3;
+    
+    /* Token Mappings to the 2 Colors */
+    --primary: var(--color-primary);
+    --primary-hover: var(--color-primary-hover);
+    --primary-light: var(--color-primary-light);
+    --primary-gradient: linear-gradient(135deg, #e47656 0%, #D96846 100%);
+    --dark-gradient: linear-gradient(135deg, #484936 0%, #2F3020 100%);
+
+    /* Backgrounds & Clean Neutrals */
+    --bg-surface: #faf9f8;
     --bg-card: #ffffff;
-    --bg-glass: rgba(255, 255, 255, 0.85);
-    --border-color: #e2e8f0;
-    --border-light: #f1f5f9;
+    --bg-glass: rgba(250, 249, 248, 0.94);
+    --border-color: #e6e3df;
+    --border-light: #f0eee9;
     
-    /* Typography Colors */
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #94a3b8;
+    --text-primary: var(--color-dark);
+    --text-secondary: var(--color-dark-light);
+    --text-muted: #797b66;
     
-    /* Elevation Shadows */
-    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
-    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
-    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
-    --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
-    --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.25);
+    /* Soft Multi-Layer Shadows */
+    --shadow-xs: 0 1px 2px 0 rgba(47, 48, 32, 0.04);
+    --shadow-sm: 0 1px 3px 0 rgba(47, 48, 32, 0.06), 0 1px 2px -1px rgba(47, 48, 32, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(47, 48, 32, 0.08), 0 2px 4px -2px rgba(47, 48, 32, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(47, 48, 32, 0.1), 0 4px 6px -4px rgba(47, 48, 32, 0.03);
+    --shadow-xl: 0 20px 25px -5px rgba(47, 48, 32, 0.12), 0 8px 10px -6px rgba(47, 48, 32, 0.04);
     
     --radius-sm: 0.375rem;
     --radius-md: 0.625rem;
@@ -73,21 +80,21 @@ body {
     height: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: #f1f5f9;
+    background: var(--color-dark-tint);
 }
 ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: #d8d6ce;
     border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: var(--color-primary);
 }
 
-/* Glassmorphism & Cards */
+/* Glassmorphism Header */
 .glass-nav {
     background: var(--bg-glass);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -102,70 +109,82 @@ body {
 .card-hover:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-md);
-    border-color: #cbd5e1;
+    border-color: var(--color-primary);
 }
 
-/* Modern Header & Brand */
+/* Header & Navbar */
 .brand-logo {
     font-weight: 800;
     font-size: 1.35rem;
     letter-spacing: -0.025em;
-    background: var(--primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    color: var(--color-dark);
+    text-decoration: none;
 }
 
 .nav-link {
     font-weight: 600;
-    color: var(--text-secondary) !important;
-    padding: 0.5rem 0.85rem !important;
-    border-radius: var(--radius-md);
+    color: var(--color-dark) !important;
+    padding: 0.5rem 0.9rem !important;
+    border-radius: 9999px;
     transition: all 0.2s ease;
 }
 
 .nav-link:hover, .nav-link.active {
-    color: var(--primary) !important;
-    background-color: var(--primary-light);
+    color: var(--color-primary) !important;
+    background-color: var(--color-primary-light);
 }
 
-/* Buttons */
-.btn-gradient {
-    background: var(--primary-gradient);
+.hover-primary:hover {
+    color: var(--color-primary) !important;
+}
+
+/* Buttons using 2-Color Scheme */
+.btn-primary, .btn-gradient {
+    background: var(--color-primary);
     color: #ffffff !important;
     border: none;
     font-weight: 600;
     padding: 0.625rem 1.25rem;
-    border-radius: var(--radius-md);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    border-radius: 9999px;
+    box-shadow: 0 4px 12px rgba(217, 104, 70, 0.25);
     transition: all 0.2s ease;
 }
 
-.btn-gradient:hover {
+.btn-primary:hover, .btn-gradient:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 6px 16px rgba(217, 104, 70, 0.35);
+    background: var(--color-primary-hover);
     opacity: 0.98;
 }
 
-.btn-gradient:active {
-    transform: translateY(0);
+.btn-dark-custom {
+    background: var(--color-dark);
+    color: #ffffff !important;
+    border: none;
+    font-weight: 600;
+    padding: 0.625rem 1.25rem;
+    border-radius: 9999px;
+    transition: all 0.2s ease;
+}
+
+.btn-dark-custom:hover {
+    background: var(--color-dark-light);
+    transform: translateY(-1px);
 }
 
 .btn-outline-custom {
     border: 1.5px solid var(--border-color);
-    color: var(--text-primary);
+    color: var(--color-dark);
     font-weight: 600;
-    border-radius: var(--radius-md);
+    border-radius: 9999px;
     background: #ffffff;
     transition: all 0.2s ease;
 }
 
 .btn-outline-custom:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    background: var(--primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
 }
 
 /* Form Controls */
@@ -175,25 +194,48 @@ body {
     border: 1px solid var(--border-color);
     font-size: 0.95rem;
     font-family: var(--font-main);
-    color: var(--text-primary);
+    color: var(--color-dark);
     background-color: #ffffff;
     transition: all 0.2s ease;
 }
 
 .form-control:focus, .form-select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(217, 104, 70, 0.18);
     outline: none;
 }
 
 .form-label {
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--color-dark);
     font-size: 0.875rem;
     margin-bottom: 0.375rem;
 }
 
-/* Status Badges */
+/* Checkboxes */
+.form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.15rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: 0.35rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.form-check-input:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(217, 104, 70, 0.2);
+}
+
+.form-check-label {
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+/* Status Badges - Clean Dual Tone */
 .badge-status {
     padding: 0.35em 0.75em;
     font-weight: 700;
@@ -207,41 +249,43 @@ body {
 }
 
 .badge-todo {
-    background-color: #f1f5f9;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+    background-color: var(--color-dark-tint);
+    color: var(--color-dark);
+    border: 1px solid var(--border-color);
 }
 
 .badge-inprogress {
-    background-color: #fef3c7;
-    color: #b45309;
-    border: 1px solid #fde68a;
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary-tint);
 }
 
 .badge-review {
-    background-color: #f3e8ff;
-    color: #7e22ce;
-    border: 1px solid #e9d5ff;
+    background-color: var(--color-dark-tint);
+    color: var(--color-dark);
+    border: 1px solid var(--color-dark);
 }
 
-.badge-done {
-    background-color: #d1fae5;
-    color: #047857;
-    border: 1px solid #a7f3d0;
+.badge-done, .badge-completed {
+    background-color: var(--color-primary);
+    color: #ffffff;
 }
 
 /* Priority Badges */
-.priority-high {
-    background-color: #fee2e2;
-    color: #b91c1c;
+.priority-high, .priority-urgent {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
 }
 .priority-medium {
-    background-color: #ffedd5;
-    color: #c2410c;
+    background-color: var(--color-dark-tint);
+    color: var(--color-dark);
+    border: 1px solid var(--border-color);
 }
 .priority-low {
-    background-color: #f1f5f9;
-    color: #475569;
+    background-color: var(--bg-card);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
 }
 
 /* Kanban Board Styling */
@@ -256,12 +300,12 @@ body {
 .kanban-column {
     flex: 0 0 320px;
     width: 320px;
-    background: #f1f5f9;
+    background: var(--color-dark-tint);
     border-radius: var(--radius-lg);
     padding: 1rem;
     display: flex;
     flex-direction: column;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
 }
 
 .kanban-column-header {
@@ -270,7 +314,7 @@ body {
     align-items: center;
     margin-bottom: 1rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--color-dark);
 }
 
 .kanban-column-body {
@@ -282,8 +326,8 @@ body {
 }
 
 .kanban-column-body.drag-over {
-    background: rgba(99, 102, 241, 0.08);
-    outline: 2px dashed var(--primary);
+    background: rgba(217, 104, 70, 0.08);
+    outline: 2px dashed var(--color-primary);
     outline-offset: -4px;
     border-radius: var(--radius-md);
 }
@@ -300,7 +344,7 @@ body {
 
 .task-card:hover {
     box-shadow: var(--shadow-md);
-    border-color: #cbd5e1;
+    border-color: var(--color-primary);
     transform: translateY(-2px);
 }
 
@@ -311,14 +355,16 @@ body {
 
 /* Progress bar styling */
 .progress-sm {
-    height: 6px;
+    height: 10px;
     border-radius: 9999px;
-    background-color: #e2e8f0;
+    background-color: var(--color-dark-tint);
+    border: 1px solid var(--border-color);
 }
 
 .progress-bar-gradient {
-    background: var(--primary-gradient);
+    background: var(--color-primary);
     border-radius: 9999px;
+    transition: width 0.4s ease-in-out;
 }
 
 /* Avatars */
@@ -326,7 +372,7 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: var(--primary-gradient);
+    background: var(--color-dark);
     color: #ffffff;
     display: inline-flex;
     align-items: center;
@@ -343,14 +389,13 @@ body {
     font-size: 0.75rem;
 }
 
-/* Alerts */
+/* Footer & Alerts */
 .alert {
     border: none;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
 }
 
-/* Footer */
 .footer {
     background: #ffffff;
     border-top: 1px solid var(--border-color);

@@ -2,11 +2,11 @@
     var csrfToken = document.querySelector('meta[name="request-verification-token"]')?.getAttribute('content') || '';
 
     var badgeClasses = {
-        Completed: 'bg-success-subtle text-success border border-success',
-        InProgress: 'bg-primary-subtle text-primary border border-primary',
-        InReview: 'bg-warning-subtle text-dark border border-warning',
-        Cancelled: 'bg-secondary-subtle text-secondary border border-secondary',
-        Todo: 'bg-light text-dark border'
+        Completed: 'badge-completed',
+        InProgress: 'badge-inprogress',
+        InReview: 'badge-review',
+        Cancelled: 'badge-todo',
+        Todo: 'badge-todo'
     };
     var statusLabels = { InProgress: 'In Progress', InReview: 'In Review' };
     var loadedSubtaskPanels = {};
@@ -27,8 +27,6 @@
         });
     }
 
-    // Event delegation on document: handlers are bound once and also cover
-    // subtask panels injected later via fetch (see initSubtaskPanels below).
     initStatusForms();
     initChecklist();
     initSubtaskPanels();
@@ -62,7 +60,7 @@
                         var statusDisplay = document.getElementById('statusDisplay');
                         var feedback = document.getElementById('statusUpdateFeedback');
                         if (statusDisplay) {
-                            statusDisplay.innerHTML = '<span class="badge ' + (badgeClasses[status] || 'bg-light text-dark border') + ' rounded-pill">' + (statusLabels[status] || status) + '</span>';
+                            statusDisplay.innerHTML = '<span class="badge-status ' + (badgeClasses[status] || 'badge-todo') + '">' + (statusLabels[status] || status) + '</span>';
                         }
                         if (feedback) {
                             feedback.classList.remove('d-none');
@@ -81,16 +79,40 @@
         if (!toggle) {
             return;
         }
-        var badge = toggle.querySelector('.badge');
-        var title = toggle.querySelector('span:not(.badge)');
+        var badge = toggle.querySelector('.badge-status');
+        var title = toggle.querySelector('span:not(.badge-status)');
         if (badge) {
-            badge.className = 'badge ' + (badgeClasses[status] || 'bg-light text-dark border') + ' rounded-pill';
+            badge.className = 'badge-status ' + (badgeClasses[status] || 'badge-todo');
             badge.textContent = statusLabels[status] || status;
         }
         if (title) {
             title.classList.toggle('text-decoration-line-through', status === 'Completed');
             title.classList.toggle('text-muted', status === 'Completed');
             title.classList.toggle('text-dark', status !== 'Completed');
+        }
+    }
+
+    function updateChecklistProgress() {
+        var allCheckboxes = document.querySelectorAll('.checklist-toggle');
+        var checkedBoxes = document.querySelectorAll('.checklist-toggle:checked');
+        var total = allCheckboxes.length;
+        var checked = checkedBoxes.length;
+        var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+
+        var progressBar = document.querySelector('.progress-bar-gradient');
+        if (progressBar) {
+            progressBar.style.width = pct + '%';
+            progressBar.setAttribute('aria-valuenow', pct);
+        }
+
+        var pctText = document.getElementById('checklistPctText');
+        if (pctText) {
+            pctText.textContent = pct + '% Done';
+        }
+
+        var countBadge = document.getElementById('checklistCountBadge');
+        if (countBadge) {
+            countBadge.textContent = checked + '/' + total;
         }
     }
 
@@ -108,10 +130,11 @@
                 .then(function (result) {
                     if (result.success) {
                         if (label) {
-                            label.classList.toggle('text-decoration-line-through');
-                            label.classList.toggle('text-muted');
-                            label.classList.toggle('text-dark');
+                            label.classList.toggle('text-decoration-line-through', checkbox.checked);
+                            label.classList.toggle('text-muted', checkbox.checked);
+                            label.classList.toggle('text-dark', !checkbox.checked);
                         }
+                        updateChecklistProgress();
                     } else {
                         checkbox.checked = !checkbox.checked;
                         alert(result.message || 'Could not update checklist item.');
@@ -136,6 +159,7 @@
                 .then(function (result) {
                     if (result.success && row) {
                         row.remove();
+                        updateChecklistProgress();
                     } else if (!result.success) {
                         alert(result.message || 'Could not delete checklist item.');
                     }
