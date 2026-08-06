@@ -8,6 +8,7 @@ namespace Modules.Tasks.Domain.IServices
     public interface ITasksService
     {
         Task<List<TaskViewModel>> GetProjectTasksAsync(Guid projectId, string? status = null, string? priority = null);
+        Task<List<TaskViewModel>> GetMyTasksAsync(Guid userId, Guid? projectId = null);
         Task<TaskViewModel> GetTaskByIdAsync(Guid taskId);
         Task<TaskViewModel> CreateTaskAsync(Guid userId, CreateTaskRequestViewModel model);
         Task<TaskViewModel> UpdateTaskAsync(Guid userId, UpdateTaskRequestViewModel model);

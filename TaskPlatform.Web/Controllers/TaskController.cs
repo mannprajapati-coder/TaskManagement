@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -49,6 +50,36 @@ namespace TaskPlatform.Web.Controllers
             var tasksResp = await _apiService.GetProjectTasksAsync(projectId, status, priority, token);
 
             return View(tasksResp.Data ?? new System.Collections.Generic.List<TaskViewModel>());
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MyTasks(string? projectId = null)
+        {
+            var token = GetAccessToken();
+
+            var allTasksResp = await _apiService.GetMyTasksAsync(null, token);
+            var allTasks = allTasksResp.Data ?? new List<TaskViewModel>();
+
+            var projectLookup = new Dictionary<Guid, ProjectViewModel>();
+            foreach (var pid in allTasks.Select(t => t.ProjectId).Distinct())
+            {
+                var projResp = await _apiService.GetProjectByIdAsync(pid.ToString(), token);
+                if (projResp.Success && projResp.Data != null)
+                {
+                    projectLookup[pid] = projResp.Data;
+                }
+            }
+
+            var tasks = allTasks;
+            if (!string.IsNullOrEmpty(projectId) && Guid.TryParse(projectId, out var projGuid))
+            {
+                tasks = allTasks.Where(t => t.ProjectId == projGuid).ToList();
+            }
+
+            ViewBag.ProjectLookup = projectLookup;
+            ViewBag.CurrentProjectId = projectId;
+
+            return View(tasks);
         }
 
         [HttpGet]
@@ -124,6 +155,7 @@ namespace TaskPlatform.Web.Controllers
             var commentsResp = await _apiService.GetTaskCommentsAsync(id, token);
             var attachmentsResp = await _apiService.GetTaskAttachmentsAsync(id, token);
             var membersResp = await _apiService.GetProjectMembersAsync(response.Data.ProjectId.ToString(), token);
+            var activityResp = await _apiService.GetTaskActivityAsync(id, token);
 
             ViewBag.Subtasks = subtasksResp.Data ?? new List<SubtaskViewModel>();
             ViewBag.Assignees = assigneesResp.Data ?? new List<TaskAssigneeViewModel>();
@@ -133,6 +165,7 @@ namespace TaskPlatform.Web.Controllers
             ViewBag.Comments = commentsResp.Data ?? new List<CommentViewModel>();
             ViewBag.Attachments = attachmentsResp.Data ?? new List<AttachmentViewModel>();
             ViewBag.ProjectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
+            ViewBag.ActivityLogs = activityResp.Data ?? new List<TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel>();
 
             return View(response.Data);
         }

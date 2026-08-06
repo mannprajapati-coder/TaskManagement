@@ -413,6 +413,18 @@ namespace TaskPlatform.Shared.ApiService
             return await PostWithTokenAsync<object, bool>($"api/v1/Notifications/MarkAsRead/{id}", new { }, accessToken);
         }
 
+        public async Task<ApiResponse<List<ActivityLogViewModel>>> GetTaskActivityAsync(string taskId, string accessToken)
+        {
+            return await GetWithTokenAsync<List<ActivityLogViewModel>>($"api/v1/Notifications/Activity/Task/{taskId}", accessToken);
+        }
+
+        public async Task<ApiResponse<List<TaskViewModel>>> GetMyTasksAsync(string? projectId, string accessToken)
+        {
+            var url = "api/v1/Tasks/GetMyTasks";
+            if (!string.IsNullOrEmpty(projectId)) url += $"?projectId={projectId}";
+            return await GetWithTokenAsync<List<TaskViewModel>>(url, accessToken);
+        }
+
         public async Task<ApiResponse<bool>> MarkAllNotificationsAsReadAsync(string accessToken)
         {
             return await PostWithTokenAsync<object, bool>("api/v1/Notifications/MarkAllAsRead", new { }, accessToken);

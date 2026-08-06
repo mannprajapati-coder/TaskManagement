@@ -36,6 +36,13 @@ namespace TaskPlatform.Api.Controllers
             return Ok(ApiResponse<List<ActivityLogViewModel>>.Ok(result));
         }
 
+        [HttpGet("Activity/Task/{taskId}")]
+        public async Task<ActionResult<ApiResponse<List<ActivityLogViewModel>>>> GetTaskActivity(Guid taskId)
+        {
+            var result = await _notificationService.GetTaskActivityAsync(taskId);
+            return Ok(ApiResponse<List<ActivityLogViewModel>>.Ok(result));
+        }
+
         [HttpPost("Activity/Log")]
         public async Task<ActionResult<ApiResponse<bool>>> LogActivity([FromBody] CreateActivityLogRequestViewModel model)
         {

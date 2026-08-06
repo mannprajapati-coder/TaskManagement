@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Modules.Notifications.Domain.IServices;
+using Modules.Projects.Domain.IServices;
 using Modules.Tasks.Domain.IServices;
 using TaskPlatform.Api.Hubs;
 using TaskPlatform.Shared.ViewModels.Common;
@@ -21,12 +22,14 @@ namespace TaskPlatform.Api.Controllers
     {
         private readonly ITasksService _tasksService;
         private readonly INotificationService _notificationService;
+        private readonly IProjectsService _projectsService;
         private readonly IHubContext<NotificationsHub> _hubContext;
 
-        public TasksController(ITasksService tasksService, INotificationService notificationService, IHubContext<NotificationsHub> hubContext)
+        public TasksController(ITasksService tasksService, INotificationService notificationService, IProjectsService projectsService, IHubContext<NotificationsHub> hubContext)
         {
             _tasksService = tasksService;
             _notificationService = notificationService;
+            _projectsService = projectsService;
             _hubContext = hubContext;
         }
 
@@ -34,6 +37,14 @@ namespace TaskPlatform.Api.Controllers
         public async Task<ActionResult<ApiResponse<List<TaskViewModel>>>> GetByProject(Guid projectId, [FromQuery] string? status, [FromQuery] string? priority)
         {
             var result = await _tasksService.GetProjectTasksAsync(projectId, status, priority);
+            return Ok(ApiResponse<List<TaskViewModel>>.Ok(result));
+        }
+
+        [HttpGet("GetMyTasks")]
+        public async Task<ActionResult<ApiResponse<List<TaskViewModel>>>> GetMyTasks([FromQuery] Guid? projectId)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _tasksService.GetMyTasksAsync(userId, projectId);
             return Ok(ApiResponse<List<TaskViewModel>>.Ok(result));
         }
 
@@ -49,6 +60,7 @@ namespace TaskPlatform.Api.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _tasksService.CreateTaskAsync(userId, model);
+            await LogActivityAsync(userId, result.ProjectId, result.Id, "TaskCreated", $"Created task \"{result.Title}\".");
             return Ok(ApiResponse<TaskViewModel>.Ok(result, "Task created successfully."));
         }
 
@@ -57,6 +69,7 @@ namespace TaskPlatform.Api.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _tasksService.UpdateTaskAsync(userId, model);
+            await LogActivityAsync(userId, result.ProjectId, result.Id, "TaskUpdated", $"Updated task \"{result.Title}\".");
             return Ok(ApiResponse<TaskViewModel>.Ok(result, "Task updated successfully."));
         }
 
@@ -70,6 +83,7 @@ namespace TaskPlatform.Api.Controllers
             if (before.Status != result.Status)
             {
                 await NotifyStatusChangeAsync(result, userId);
+                await LogActivityAsync(userId, result.ProjectId, result.Id, "StatusChanged", $"Status changed from {before.Status} to {result.Status}.");
             }
 
             return Ok(ApiResponse<TaskViewModel>.Ok(result, "Task status updated."));
@@ -85,6 +99,7 @@ namespace TaskPlatform.Api.Controllers
             if (before.Status != result.Status)
             {
                 await NotifyStatusChangeAsync(result, userId);
+                await LogActivityAsync(userId, result.ProjectId, result.Id, "StatusChanged", $"Status changed from {before.Status} to {result.Status}.");
             }
 
             return Ok(ApiResponse<TaskViewModel>.Ok(result, "Tasks reordered."));
@@ -94,7 +109,9 @@ namespace TaskPlatform.Api.Controllers
         public async Task<ActionResult<ApiResponse<bool>>> Delete(Guid id)
         {
             var userId = GetCurrentUserId();
+            var task = await _tasksService.GetTaskByIdAsync(id);
             var result = await _tasksService.DeleteTaskAsync(userId, id);
+            await LogActivityAsync(userId, task.ProjectId, null, "TaskDeleted", $"Deleted task \"{task.Title}\".");
             return Ok(ApiResponse<bool>.Ok(result, "Task deleted."));
         }
 
@@ -111,6 +128,7 @@ namespace TaskPlatform.Api.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _tasksService.CreateSubtaskAsync(userId, model);
+            await LogActivityAsync(userId, result.ProjectId, result.ParentTaskId, "SubtaskCreated", $"Added subtask \"{result.Title}\".");
             return Ok(ApiResponse<SubtaskViewModel>.Ok(result, "Subtask created successfully."));
         }
 
@@ -141,6 +159,7 @@ namespace TaskPlatform.Api.Controllers
                 "You've been assigned a task",
                 $"\"{task.Title}\" was assigned to you.",
                 $"/Task/Detail/{task.Id}");
+            await LogActivityAsync(userId, task.ProjectId, task.Id, "AssigneeAdded", $"Assigned {result.FullName} to \"{task.Title}\".");
 
             return Ok(ApiResponse<TaskAssigneeViewModel>.Ok(result, "Assignee added to task."));
         }
@@ -149,7 +168,9 @@ namespace TaskPlatform.Api.Controllers
         public async Task<ActionResult<ApiResponse<bool>>> RemoveAssignee(Guid taskId, Guid targetUserId)
         {
             var userId = GetCurrentUserId();
+            var task = await _tasksService.GetTaskByIdAsync(taskId);
             var result = await _tasksService.RemoveTaskAssigneeAsync(userId, taskId, targetUserId);
+            await LogActivityAsync(userId, task.ProjectId, task.Id, "AssigneeRemoved", $"Removed an assignee from \"{task.Title}\".");
             return Ok(ApiResponse<bool>.Ok(result, "Assignee removed."));
         }
 
@@ -181,6 +202,8 @@ namespace TaskPlatform.Api.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _tasksService.AddChecklistItemAsync(userId, model);
+            var task = await _tasksService.GetTaskByIdAsync(result.TaskId);
+            await LogActivityAsync(userId, task.ProjectId, task.Id, "ChecklistItemAdded", $"Added checklist item \"{result.Title}\".");
             return Ok(ApiResponse<ChecklistItemViewModel>.Ok(result, "Checklist item added."));
         }
 
@@ -206,6 +229,8 @@ namespace TaskPlatform.Api.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _tasksService.SetRecurringTaskRuleAsync(userId, model);
+            var task = await _tasksService.GetTaskByIdAsync(result.TaskId);
+            await LogActivityAsync(userId, task.ProjectId, task.Id, "RecurringRuleSet", $"Set recurring rule ({result.RecurrencePattern}) on \"{task.Title}\".");
             return Ok(ApiResponse<RecurringTaskRuleViewModel>.Ok(result, "Recurring task rule saved."));
         }
 
@@ -234,6 +259,26 @@ namespace TaskPlatform.Api.Controllers
                 "Task status updated",
                 $"\"{task.Title}\" status changed to {task.Status}.",
                 $"/Task/Detail/{task.Id}");
+        }
+
+        private async Task LogActivityAsync(Guid actorUserId, Guid projectId, Guid? taskId, string action, string details)
+        {
+            try
+            {
+                var project = await _projectsService.GetProjectByIdAsync(projectId, actorUserId);
+                await _notificationService.LogActivityAsync(actorUserId, new CreateActivityLogRequestViewModel
+                {
+                    WorkspaceId = project.WorkspaceId,
+                    ProjectId = projectId,
+                    TaskId = taskId,
+                    Action = action,
+                    Details = details
+                });
+            }
+            catch
+            {
+                // Activity logging is best-effort and must never fail the primary task operation.
+            }
         }
 
         private async Task NotifyUserAsync(Guid targetUserId, Guid currentUserId, string title, string message, string linkUrl)

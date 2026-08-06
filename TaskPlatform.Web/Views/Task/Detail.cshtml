@@ -11,6 +11,7 @@
     var comments = ViewBag.Comments as List<CommentViewModel> ?? new List<CommentViewModel>();
     var attachments = ViewBag.Attachments as List<AttachmentViewModel> ?? new List<AttachmentViewModel>();
     var projectMembers = ViewBag.ProjectMembers as List<ProjectMemberViewModel> ?? new List<ProjectMemberViewModel>();
+    var activityLogs = ViewBag.ActivityLogs as List<TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel> ?? new List<TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel>();
     var unassignedMembers = projectMembers.Where(m => !assignees.Any(a => a.UserId == m.UserId)).ToList();
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
     var checklistDone = checklistItems.Count(c => c.IsCompleted);
@@ -34,6 +35,28 @@
         if (contentType.Contains("zip")) return "bi-file-earmark-zip";
         return "bi-file-earmark";
     }
+
+    string ActorName(Guid actorUserId, string fallback)
+    {
+        var member = projectMembers.FirstOrDefault(m => m.UserId == actorUserId);
+        return member?.FullName ?? (string.IsNullOrEmpty(fallback) || fallback == "User" ? "A team member" : fallback);
+    }
+
+    string ActivityIcon(string action) => action switch
+    {
+        "TaskCreated" => "bi-plus-circle text-success",
+        "TaskUpdated" => "bi-pencil-square text-primary",
+        "StatusChanged" => "bi-arrow-repeat text-warning",
+        "TaskDeleted" => "bi-trash text-danger",
+        "SubtaskCreated" => "bi-diagram-2 text-info",
+        "AssigneeAdded" => "bi-person-plus text-primary",
+        "AssigneeRemoved" => "bi-person-dash text-danger",
+        "ChecklistItemAdded" => "bi-check2-square text-success",
+        "RecurringRuleSet" => "bi-arrow-repeat text-info",
+        "CommentAdded" => "bi-chat-dots text-primary",
+        "AttachmentAdded" => "bi-paperclip text-secondary",
+        _ => "bi-clock-history text-muted"
+    };
 }
 
 <div class="container py-4">
@@ -190,6 +213,15 @@
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-recurring" type="button" role="tab">
                                 <i class="bi bi-arrow-repeat me-1"></i> Recurring
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-activity" type="button" role="tab">
+                                <i class="bi bi-clock-history me-1"></i> Activity
+                                @if (activityLogs.Count > 0)
+                                {
+                                    <span class="badge bg-light text-dark border rounded-pill ms-1 badge-sm">@activityLogs.Count</span>
+                                }
                             </button>
                         </li>
                     </ul>
@@ -412,6 +444,34 @@
                                 </div>
                                 <button type="submit" class="btn btn-sm btn-gradient rounded-pill px-3 mt-3">Save Recurring Rule</button>
                             </form>
+                        </div>
+
+                        <!-- Activity -->
+                        <div class="tab-pane fade" id="tab-activity" role="tabpanel">
+                            @if (activityLogs.Any())
+                            {
+                                <ul class="list-unstyled mb-0" style="max-height: 420px; overflow-y: auto;">
+                                    @foreach (var log in activityLogs)
+                                    {
+                                        <li class="d-flex gap-3 pb-3">
+                                            <div class="flex-shrink-0">
+                                                <i class="bi @ActivityIcon(log.Action) fs-5"></i>
+                                            </div>
+                                            <div class="flex-grow-1 border-bottom pb-3">
+                                                <div>
+                                                    <span class="fw-semibold text-dark">@ActorName(log.ActorUserId, log.ActorName)</span>
+                                                    <span class="text-secondary">@log.Details</span>
+                                                </div>
+                                                <span class="extra-small text-muted">@log.Timestamp.ToString("MMM dd, yyyy HH:mm")</span>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="text-muted small mb-0">No activity recorded for this task yet.</p>
+                            }
                         </div>
                     </div>
                 </div>

@@ -5,8 +5,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Modules.Collaboration.Domain.IServices;
+using Modules.Notifications.Domain.IServices;
+using Modules.Projects.Domain.IServices;
+using Modules.Tasks.Domain.IServices;
 using TaskPlatform.Shared.ViewModels.Collaboration;
 using TaskPlatform.Shared.ViewModels.Common;
+using TaskPlatform.Shared.ViewModels.Notification;
 
 namespace TaskPlatform.Api.Controllers
 {
@@ -16,10 +20,16 @@ namespace TaskPlatform.Api.Controllers
     public class CollaborationController : ControllerBase
     {
         private readonly ICollaborationService _collaborationService;
+        private readonly ITasksService _tasksService;
+        private readonly IProjectsService _projectsService;
+        private readonly INotificationService _notificationService;
 
-        public CollaborationController(ICollaborationService collaborationService)
+        public CollaborationController(ICollaborationService collaborationService, ITasksService tasksService, IProjectsService projectsService, INotificationService notificationService)
         {
             _collaborationService = collaborationService;
+            _tasksService = tasksService;
+            _projectsService = projectsService;
+            _notificationService = notificationService;
         }
 
         [HttpGet("Tasks/{taskId}/Comments")]
@@ -34,6 +44,8 @@ namespace TaskPlatform.Api.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _collaborationService.AddTaskCommentAsync(userId, model);
+            var task = await _tasksService.GetTaskByIdAsync(model.TaskId);
+            await LogActivityAsync(userId, task.ProjectId, task.Id, "CommentAdded", $"Commented on \"{task.Title}\".");
             return Ok(ApiResponse<CommentViewModel>.Ok(result, "Comment added successfully."));
         }
 
@@ -57,6 +69,8 @@ namespace TaskPlatform.Api.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _collaborationService.AddTaskAttachmentAsync(userId, taskId, fileName, filePath, fileSize, contentType);
+            var task = await _tasksService.GetTaskByIdAsync(taskId);
+            await LogActivityAsync(userId, task.ProjectId, task.Id, "AttachmentAdded", $"Attached \"{fileName}\" to \"{task.Title}\".");
             return Ok(ApiResponse<AttachmentViewModel>.Ok(result, "Attachment uploaded successfully."));
         }
 
@@ -66,6 +80,26 @@ namespace TaskPlatform.Api.Controllers
             var userId = GetCurrentUserId();
             var result = await _collaborationService.DeleteTaskAttachmentAsync(userId, attachmentId);
             return Ok(ApiResponse<bool>.Ok(result, "Attachment deleted."));
+        }
+
+        private async Task LogActivityAsync(Guid actorUserId, Guid projectId, Guid? taskId, string action, string details)
+        {
+            try
+            {
+                var project = await _projectsService.GetProjectByIdAsync(projectId, actorUserId);
+                await _notificationService.LogActivityAsync(actorUserId, new CreateActivityLogRequestViewModel
+                {
+                    WorkspaceId = project.WorkspaceId,
+                    ProjectId = projectId,
+                    TaskId = taskId,
+                    Action = action,
+                    Details = details
+                });
+            }
+            catch
+            {
+                // Activity logging is best-effort and must never fail the primary operation.
+            }
         }
 
         private Guid GetCurrentUserId()

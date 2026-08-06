@@ -111,5 +111,9 @@ namespace TaskPlatform.Shared.ApiService
         Task<ApiResponse<List<NotificationItemViewModel>>> GetMyNotificationsAsync(bool unreadOnly, string accessToken);
         Task<ApiResponse<bool>> MarkNotificationAsReadAsync(string id, string accessToken);
         Task<ApiResponse<bool>> MarkAllNotificationsAsReadAsync(string accessToken);
+        Task<ApiResponse<List<ActivityLogViewModel>>> GetTaskActivityAsync(string taskId, string accessToken);
+
+        // My Tasks
+        Task<ApiResponse<List<TaskViewModel>>> GetMyTasksAsync(string? projectId, string accessToken);
     }
 }

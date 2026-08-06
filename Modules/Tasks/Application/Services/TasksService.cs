@@ -47,6 +47,31 @@ namespace Modules.Tasks.Application.Services
             return tasks.Select(t => MapToViewModel(t, userLookup)).ToList();
         }
 
+        public async Task<List<TaskViewModel>> GetMyTasksAsync(Guid userId, Guid? projectId = null)
+        {
+            var query = _dbContext.TaskAssignees
+                .Where(a => a.UserId == userId)
+                .Join(_dbContext.Tasks, a => a.TaskId, t => t.Id, (a, t) => t)
+                .Where(t => t.ParentTaskId == null);
+
+            if (projectId.HasValue)
+            {
+                query = query.Where(t => t.ProjectId == projectId.Value);
+            }
+
+            var tasks = await query
+                .OrderBy(t => t.DueDate == null)
+                .ThenBy(t => t.DueDate)
+                .ThenByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            var userLookup = await GetUserLookupAsync(tasks
+                .Where(t => t.PrimaryAssigneeUserId.HasValue)
+                .Select(t => t.PrimaryAssigneeUserId!.Value));
+
+            return tasks.Select(t => MapToViewModel(t, userLookup)).ToList();
+        }
+
         public async Task<TaskViewModel> GetTaskByIdAsync(Guid taskId)
         {
             var task = await _dbContext.Tasks.FindAsync(taskId);
