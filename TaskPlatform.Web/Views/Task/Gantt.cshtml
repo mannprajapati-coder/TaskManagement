@@ -1,50 +1,95 @@
-﻿@model List<TaskPlatform.Shared.ViewModels.Task.TaskViewModel>
+@model List<TaskPlatform.Shared.ViewModels.Task.TaskViewModel>
 @{
     var project = ViewBag.Project as TaskPlatform.Shared.ViewModels.Project.ProjectViewModel;
-    ViewData["Title"] = $"{project?.Name ?? "Project"} — Gantt";
+    ViewData["Title"] = $"{project?.Name ?? "Project"} — Gantt Timeline";
 }
+
 <link rel="stylesheet" href="https://unpkg.com/frappe-gantt@0.5.0/dist/frappe-gantt.css" />
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+
+<div class="py-2">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 pb-3 border-bottom">
         <div>
-            <h3 class="fw-bold mb-1">Gantt Chart — @project?.Name</h3>
-            <p class="text-muted small mb-0">Timeline view of tasks</p>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h3 class="fw-extrabold text-dark mb-0"><i class="bi bi-bar-chart-steps text-primary me-2"></i>Gantt Timeline</h3>
+                <span class="badge bg-primary-subtle text-primary rounded-pill px-3 fw-bold">@project?.Name</span>
+            </div>
+            <p class="text-secondary small mb-0">Visual task schedule, dependencies, and duration roadmap.</p>
         </div>
-        <div class="d-flex gap-2">
-            <a asp-action="Index" asp-route-projectId="@project?.Id" class="btn btn-outline-secondary rounded-pill px-3"><i class="bi bi-arrow-left"></i> Task Board</a>
-            <a asp-action="Create" asp-route-projectId="@project?.Id" class="btn btn-gradient rounded-pill px-3"><i class="bi bi-plus-lg"></i> New Task</a>
+
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <div class="btn-group btn-group-sm rounded-pill shadow-sm bg-white border p-1" role="group">
+                <button type="button" class="btn btn-light rounded-pill px-3 fw-semibold active" id="btnViewDay">Day</button>
+                <button type="button" class="btn btn-light rounded-pill px-3 fw-semibold" id="btnViewWeek">Week</button>
+                <button type="button" class="btn btn-light rounded-pill px-3 fw-semibold" id="btnViewMonth">Month</button>
+            </div>
+
+            <a asp-action="Index" asp-route-projectId="@project?.Id" class="btn btn-outline-custom btn-sm px-3">
+                <i class="bi bi-kanban me-1"></i> Task Board
+            </a>
+            <a asp-action="Create" asp-route-projectId="@project?.Id" class="btn btn-gradient btn-sm px-3 shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i> New Task
+            </a>
         </div>
     </div>
 
-    <div id="gantt-target" style="background:white; padding:12px; border-radius:8px;"></div>
+    <!-- Gantt Chart Container -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+        <div id="gantt-target" class="overflow-x-auto min-h-350"></div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/frappe-gantt@0.5.0/dist/frappe-gantt.min.js"></script>
 <script>
-    // Build tasks for Frappe Gantt
     const tasks = [
         @foreach (var t in Model)
         {
-                var start = (t.StartDate ?? t.CreatedAt).ToString("yyyy-MM-dd");
-                var end = (t.DueDate ?? t.StartDate ?? t.CreatedAt).ToString("yyyy-MM-dd");
-                var progress = t.Status == "Completed" ? 100 : (t.Status == "InProgress" ? 50 : 0);
-                <text>{
-                    id: "@t.Id",
-                    name: "@(t.Title?.Replace("\"", "\\\"").Replace("\r", " ").Replace("\n", " "))",
-                    start: "@start",
-                    end: "@end",
-                    progress: @progress,
-                    custom_class: "@(t.Status?.ToLower() ?? "todo")"
-                },</text>
+            var start = (t.StartDate ?? t.CreatedAt).ToString("yyyy-MM-dd");
+            var end = (t.DueDate ?? t.StartDate ?? t.CreatedAt).ToString("yyyy-MM-dd");
+            var progress = t.Status == "Completed" ? 100 : (t.Status == "InProgress" ? 50 : 0);
+            <text>{
+                id: "@t.Id",
+                name: "@(t.Title?.Replace("\"", "\\\"").Replace("\r", " ").Replace("\n", " "))",
+                start: "@start",
+                end: "@end",
+                progress: @progress,
+                custom_class: "@(t.Status?.ToLower() ?? "todo")"
+            },</text>
         }
     ];
 
-    const gantt = new Gantt("#gantt-target", tasks, {
-        popup_trigger: 'click',
-        on_click: (task) => {
-            // navigate to task detail
-            window.location.href = '/Task/Detail?id=' + task.id;
-        },
-        view_mode: 'Week'
-    });
+    if (tasks.length > 0) {
+        const gantt = new Gantt("#gantt-target", tasks, {
+            popup_trigger: 'click',
+            on_click: (task) => {
+                window.location.href = '/Task/Detail/' + task.id;
+            },
+            view_mode: 'Week'
+        });
+
+        document.getElementById('btnViewDay')?.addEventListener('click', function () {
+            gantt.change_view_mode('Day');
+            setActiveBtn(this);
+        });
+        document.getElementById('btnViewWeek')?.addEventListener('click', function () {
+            gantt.change_view_mode('Week');
+            setActiveBtn(this);
+        });
+        document.getElementById('btnViewMonth')?.addEventListener('click', function () {
+            gantt.change_view_mode('Month');
+            setActiveBtn(this);
+        });
+
+        function setActiveBtn(btn) {
+            document.querySelectorAll('#btnViewDay, #btnViewWeek, #btnViewMonth').forEach(b => b.classList.remove('active', 'btn-primary'));
+            btn.classList.add('active');
+        }
+    } else {
+        document.getElementById('gantt-target').innerHTML = `
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-bar-chart-steps display-4 d-block mb-3 opacity-50"></i>
+                <h5 class="fw-bold text-dark">No Timeline Tasks Available</h5>
+                <p class="small text-secondary mb-0">Create tasks with start and due dates to render the Gantt chart timeline.</p>
+            </div>`;
+    }
 </script>

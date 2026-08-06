@@ -3,59 +3,66 @@
     ViewData["Title"] = "My Profile";
 }
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center gap-3 mb-4">
-                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-3" style="width: 64px; height: 64px;">
-                            @(string.IsNullOrEmpty(Model.FullName) ? "U" : Model.FullName.Substring(0, 1).ToUpper())
-                        </div>
-                        <div>
-                            <h4 class="fw-bold mb-0">@Model.FullName</h4>
-                            <p class="text-muted small mb-0">@Model.Email</p>
-                        </div>
-                    </div>
+<div class="py-2">
+    <!-- Profile Header Card -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4 max-w-4xl mx-auto" style="max-width: 900px;">
+        <div class="p-4 p-md-5 bg-gradient text-white position-relative" style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);">
+            <div class="d-flex align-items-center gap-4 position-relative z-1">
+                <div class="avatar bg-white text-primary fw-extrabold shadow-lg" style="width: 80px; height: 80px; font-size: 2.25rem; border: 4px solid rgba(255,255,255,0.4);">
+                    @(string.IsNullOrEmpty(Model.FullName) ? "U" : Model.FullName.Substring(0, 1).ToUpper())
+                </div>
+                <div>
+                    <h3 class="fw-extrabold text-white mb-1">@Model.FullName</h3>
+                    <p class="text-white text-opacity-90 small mb-1"><i class="bi bi-envelope me-1"></i>@Model.Email</p>
+                    @if (!string.IsNullOrEmpty(Model.JobTitle))
+                    {
+                        <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-1 fw-semibold"><i class="bi bi-briefcase me-1"></i>@Model.JobTitle</span>
+                    }
+                </div>
+            </div>
+        </div>
 
-                    <h5 class="fw-semibold mb-3">Edit Profile</h5>
+        <div class="card-body p-4 p-md-5">
+            <div class="row g-5">
+                <!-- Left: Edit Profile -->
+                <div class="col-lg-6 border-end-lg">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-person-lines-fill text-primary me-2"></i>Personal Details</h5>
                     <form asp-action="UpdateProfile" method="post">
                         @Html.AntiForgeryToken()
                         <div class="mb-3">
-                            <label class="form-label small fw-semibold">Full Name</label>
+                            <label class="form-label small fw-bold text-dark">Full Name</label>
                             <input name="FullName" value="@Model.FullName" class="form-control" required />
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-semibold">Job Title</label>
+                            <label class="form-label small fw-bold text-dark">Job Title</label>
                             <input name="JobTitle" value="@Model.JobTitle" class="form-control" placeholder="e.g. Senior Software Engineer" />
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-semibold">Bio</label>
-                            <textarea name="Bio" class="form-control" rows="3" placeholder="Short bio...">@Model.Bio</textarea>
+                            <label class="form-label small fw-bold text-dark">Bio</label>
+                            <textarea name="Bio" class="form-control" rows="3" placeholder="Share a brief overview about yourself...">@Model.Bio</textarea>
                         </div>
-                        <button type="submit" class="btn btn-gradient px-4">Save Changes</button>
+                        <button type="submit" class="btn btn-gradient px-4 py-2 font-semibold shadow-sm">Save Profile Changes</button>
                     </form>
                 </div>
-            </div>
 
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4">
-                    <h5 class="fw-semibold mb-3">Change Password</h5>
+                <!-- Right: Password Security -->
+                <div class="col-lg-6">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shield-lock-fill text-primary me-2"></i>Security & Password</h5>
                     <form asp-action="ChangePassword" method="post">
                         @Html.AntiForgeryToken()
                         <div class="mb-3">
-                            <label class="form-label small fw-semibold">Current Password</label>
+                            <label class="form-label small fw-bold text-dark">Current Password</label>
                             <input type="password" name="CurrentPassword" class="form-control" required />
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-semibold">New Password</label>
+                            <label class="form-label small fw-bold text-dark">New Password</label>
                             <input type="password" name="NewPassword" class="form-control" required />
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-semibold">Confirm New Password</label>
+                            <label class="form-label small fw-bold text-dark">Confirm New Password</label>
                             <input type="password" name="ConfirmPassword" class="form-control" required />
                         </div>
-                        <button type="submit" class="btn btn-outline-danger px-4">Update Password</button>
+                        <button type="submit" class="btn btn-outline-danger px-4 py-2 font-semibold">Update Password</button>
                     </form>
                 </div>
             </div>

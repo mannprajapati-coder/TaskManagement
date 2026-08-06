@@ -40,27 +40,35 @@ namespace TaskPlatform.Web.Controllers
                 return View(model);
             }
 
-            var response = await _apiService.LoginAsync(model);
-            if (!response.Success || response.Data == null)
+            try
             {
-                ModelState.AddModelError(string.Empty, response.Message ?? "Invalid login attempt.");
+                var response = await _apiService.LoginAsync(model);
+                if (response == null || !response.Success || response.Data == null)
+                {
+                    ModelState.AddModelError(string.Empty, response?.Message ?? "Invalid email or password. Please try again.");
+                    return View(model);
+                }
+
+                if (response.Data.MfaRequired)
+                {
+                    TempData["MfaChallengeToken"] = response.Data.MfaChallengeToken;
+                    return RedirectToAction(nameof(VerifyMfa));
+                }
+
+                await SignInUserAsync(response.Data);
+
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return Redirect(returnUrl);
+                }
+
+                return RedirectToAction("Index", "Dashboard");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, "Unable to sign in at this time. Please check your credentials or API status.");
                 return View(model);
             }
-
-            if (response.Data.MfaRequired)
-            {
-                TempData["MfaChallengeToken"] = response.Data.MfaChallengeToken;
-                return RedirectToAction(nameof(VerifyMfa));
-            }
-
-            await SignInUserAsync(response.Data);
-
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
-
-            return RedirectToAction("Index", "Dashboard");
         }
 
         [HttpGet]
@@ -78,25 +86,41 @@ namespace TaskPlatform.Web.Controllers
                 return View(model);
             }
 
-            var response = await _apiService.RegisterAsync(model);
-            if (!response.Success)
+            try
             {
-                ModelState.AddModelError(string.Empty, response.Message);
+                var response = await _apiService.RegisterAsync(model);
+                if (response == null || !response.Success)
+                {
+                    ModelState.AddModelError(string.Empty, response?.Message ?? "Registration failed. Please try again.");
+                    return View(model);
+                }
+
+                TempData["SuccessMessage"] = response.Message ?? "Registration successful! Please log in.";
+                return RedirectToAction(nameof(Login));
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError(string.Empty, "Unable to register at this time. Please try again.");
                 return View(model);
             }
-
-            TempData["SuccessMessage"] = response.Message;
-            return RedirectToAction(nameof(Login));
         }
 
         [HttpGet]
         public async Task<IActionResult> VerifyEmail(string userId, string token)
         {
-            var model = new VerifyEmailRequestViewModel { UserId = userId, Token = token };
-            var response = await _apiService.VerifyEmailAsync(model);
+            try
+            {
+                var model = new VerifyEmailRequestViewModel { UserId = userId, Token = token };
+                var response = await _apiService.VerifyEmailAsync(model);
 
-            ViewBag.Success = response.Success;
-            ViewBag.Message = response.Message;
+                ViewBag.Success = response?.Success ?? false;
+                ViewBag.Message = response?.Message ?? "Verification completed.";
+            }
+            catch (Exception)
+            {
+                ViewBag.Success = false;
+                ViewBag.Message = "Email verification encountered an issue.";
+            }
             return View();
         }
 
@@ -115,9 +139,17 @@ namespace TaskPlatform.Web.Controllers
                 return View(model);
             }
 
-            var response = await _apiService.ForgotPasswordAsync(model);
-            TempData["SuccessMessage"] = response.Message;
-            return RedirectToAction(nameof(Login));
+            try
+            {
+                var response = await _apiService.ForgotPasswordAsync(model);
+                TempData["SuccessMessage"] = response?.Message ?? "Password reset instructions sent.";
+                return RedirectToAction(nameof(Login));
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError(string.Empty, "Unable to process password reset request.");
+                return View(model);
+            }
         }
 
         [HttpGet]
@@ -135,15 +167,23 @@ namespace TaskPlatform.Web.Controllers
                 return View(model);
             }
 
-            var response = await _apiService.ResetPasswordAsync(model);
-            if (!response.Success)
+            try
             {
-                ModelState.AddModelError(string.Empty, response.Message);
+                var response = await _apiService.ResetPasswordAsync(model);
+                if (response == null || !response.Success)
+                {
+                    ModelState.AddModelError(string.Empty, response?.Message ?? "Password reset failed.");
+                    return View(model);
+                }
+
+                TempData["SuccessMessage"] = response.Message ?? "Password reset successful! Please log in.";
+                return RedirectToAction(nameof(Login));
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError(string.Empty, "Error resetting password.");
                 return View(model);
             }
-
-            TempData["SuccessMessage"] = response.Message;
-            return RedirectToAction(nameof(Login));
         }
 
         [HttpGet]
@@ -168,43 +208,66 @@ namespace TaskPlatform.Web.Controllers
                 return View(model);
             }
 
-            var response = await _apiService.VerifyMfaAsync(model);
-            if (!response.Success || response.Data == null)
+            try
             {
-                ModelState.AddModelError(string.Empty, response.Message);
+                var response = await _apiService.VerifyMfaAsync(model);
+                if (response == null || !response.Success || response.Data == null)
+                {
+                    ModelState.AddModelError(string.Empty, response?.Message ?? "MFA verification failed.");
+                    return View(model);
+                }
+
+                await SignInUserAsync(response.Data);
+                return RedirectToAction("Index", "Dashboard");
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError(string.Empty, "MFA verification error.");
                 return View(model);
             }
-
-            await SignInUserAsync(response.Data);
-            return RedirectToAction("Index", "Home");
         }
 
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> MfaSetup()
         {
-            var accessToken = User.FindFirst("AccessToken")?.Value ?? string.Empty;
-            var response = await _apiService.EnableMfaAsync(accessToken);
-
-            if (!response.Success || response.Data == null)
+            try
             {
-                TempData["ErrorMessage"] = response.Message;
-                return RedirectToAction("Index", "Home");
-            }
+                var accessToken = User.FindFirst("AccessToken")?.Value ?? string.Empty;
+                var response = await _apiService.EnableMfaAsync(accessToken);
 
-            return View(response.Data);
+                if (response == null || !response.Success || response.Data == null)
+                {
+                    TempData["ErrorMessage"] = response?.Message ?? "MFA setup failed.";
+                    return RedirectToAction("Index", "Dashboard");
+                }
+
+                return View(response.Data);
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "Unable to load MFA setup.";
+                return RedirectToAction("Index", "Dashboard");
+            }
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            var refreshToken = User.FindFirst("RefreshToken")?.Value ?? string.Empty;
-            var accessToken = User.FindFirst("AccessToken")?.Value ?? string.Empty;
-
-            if (!string.IsNullOrEmpty(refreshToken))
+            try
             {
-                await _apiService.LogoutAsync(new RefreshTokenRequestViewModel { RefreshToken = refreshToken }, accessToken);
+                var refreshToken = User.FindFirst("RefreshToken")?.Value ?? string.Empty;
+                var accessToken = User.FindFirst("AccessToken")?.Value ?? string.Empty;
+
+                if (!string.IsNullOrEmpty(refreshToken))
+                {
+                    await _apiService.LogoutAsync(new RefreshTokenRequestViewModel { RefreshToken = refreshToken }, accessToken);
+                }
+            }
+            catch
+            {
+                // Silent logout cleanup
             }
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

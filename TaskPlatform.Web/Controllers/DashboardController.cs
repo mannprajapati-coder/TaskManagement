@@ -21,47 +21,56 @@ namespace TaskPlatform.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string? workspaceId = null)
         {
-            var token = GetAccessToken();
-
-            var workspacesResp = await _apiService.GetMyWorkspacesAsync(token);
-            if (!workspacesResp.Success || workspacesResp.Data == null || !workspacesResp.Data.Any())
+            try
             {
-                if (!workspacesResp.Success && (workspacesResp.Message.Contains("401") || workspacesResp.Message.Contains("Unauthorized")))
+                var token = GetAccessToken();
+
+                var workspacesResp = await _apiService.GetMyWorkspacesAsync(token);
+                if (workspacesResp == null || !workspacesResp.Success || workspacesResp.Data == null || !workspacesResp.Data.Any())
                 {
-                    TempData["ErrorMessage"] = "Your session expired. Please log in again.";
-                    return RedirectToAction("Login", "Auth");
+                    if (workspacesResp != null && !workspacesResp.Success && (workspacesResp.Message.Contains("401") || workspacesResp.Message.Contains("Unauthorized")))
+                    {
+                        TempData["ErrorMessage"] = "Your session expired. Please log in again.";
+                        return RedirectToAction("Login", "Auth");
+                    }
+                    TempData["SuccessMessage"] = "Welcome! Create your first workspace to get started.";
+                    return RedirectToAction("Create", "Workspace");
                 }
+
+                ViewBag.Workspaces = workspacesResp.Data;
+
+                var targetWorkspace = string.IsNullOrEmpty(workspaceId)
+                    ? workspacesResp.Data.FirstOrDefault()
+                    : workspacesResp.Data.FirstOrDefault(w => w.Id.ToString() == workspaceId) ?? workspacesResp.Data.FirstOrDefault();
+
+                if (targetWorkspace == null)
+                {
+                    return RedirectToAction("Create", "Workspace");
+                }
+
+                ViewBag.CurrentWorkspace = targetWorkspace;
+
+                var dashboardResp = await _apiService.GetDashboardOverviewAsync(targetWorkspace.Id.ToString(), token);
+
+                var model = (dashboardResp != null && dashboardResp.Data != null) ? dashboardResp.Data : new DashboardOverviewViewModel
+                {
+                    WorkspaceId = targetWorkspace.Id,
+                    TotalProjects = 0,
+                    TotalTasks = 0,
+                    CompletedTasks = 0,
+                    InProgressTasks = 0,
+                    PendingTasks = 0,
+                    OverdueTasks = 0,
+                    CompletionRatePercentage = 0
+                };
+
+                return View(model);
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An error occurred loading the dashboard. Please try again.";
                 return RedirectToAction("Create", "Workspace");
             }
-
-            ViewBag.Workspaces = workspacesResp.Data;
-
-            var targetWorkspace = string.IsNullOrEmpty(workspaceId)
-                ? workspacesResp.Data.FirstOrDefault()
-                : workspacesResp.Data.FirstOrDefault(w => w.Id.ToString() == workspaceId) ?? workspacesResp.Data.FirstOrDefault();
-
-            if (targetWorkspace == null)
-            {
-                return RedirectToAction("Create", "Workspace");
-            }
-
-            ViewBag.CurrentWorkspace = targetWorkspace;
-
-            var dashboardResp = await _apiService.GetDashboardOverviewAsync(targetWorkspace.Id.ToString(), token);
-
-            var model = dashboardResp.Data ?? new DashboardOverviewViewModel
-            {
-                WorkspaceId = targetWorkspace.Id,
-                TotalProjects = 0,
-                TotalTasks = 0,
-                CompletedTasks = 0,
-                InProgressTasks = 0,
-                PendingTasks = 0,
-                OverdueTasks = 0,
-                CompletionRatePercentage = 0
-            };
-
-            return View(model);
         }
 
         private string GetAccessToken() => User.Claims.FirstOrDefault(c => c.Type == "AccessToken")?.Value ?? User.FindFirst("AccessToken")?.Value ?? string.Empty;

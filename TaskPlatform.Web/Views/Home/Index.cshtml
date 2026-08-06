@@ -1,8 +1,113 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Modern Task & Team Workflow Platform";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="py-5">
+    <!-- Hero Section -->
+    <div class="row align-items-center g-5 py-4">
+        <div class="col-lg-6">
+            <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-2 rounded-pill mb-3">
+                <i class="bi bi-stars me-1"></i> Powerful Enterprise Task Platform
+            </span>
+            <h1 class="display-4 fw-extrabold text-dark tracking-tight mb-3">
+                Manage Tasks, Workspaces & Teams <span class="text-primary">Effortlessly</span>
+            </h1>
+            <p class="lead text-secondary mb-4">
+                Streamline your team's workload with interactive Kanban boards, subtasks, checklists, real-time notifications, and calendar integration in one seamless workspace.
+            </p>
+            <div class="d-flex flex-wrap gap-3 mb-4">
+                <a asp-controller="Auth" asp-action="Register" class="btn btn-gradient btn-lg px-4 py-3 shadow-lg">
+                    Start Testing Free <i class="bi bi-arrow-right ms-2"></i>
+                </a>
+                <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-custom btn-lg px-4 py-3">
+                    Sign In to Workspace
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-4 text-muted small">
+                <span><i class="bi bi-check-circle-fill text-success me-1"></i> Real-time SignalR</span>
+                <span><i class="bi bi-check-circle-fill text-success me-1"></i> Drag & Drop Kanban</span>
+                <span><i class="bi bi-check-circle-fill text-success me-1"></i> Clean REST APIs</span>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-xl rounded-4 overflow-hidden bg-white p-3">
+                <div class="bg-light rounded-3 p-3 border">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary text-white rounded-pill px-3">Sprint-10 Active</span>
+                            <h6 class="mb-0 fw-bold">Q3 Mobile Platform Launch</h6>
+                        </div>
+                        <span class="badge bg-success-subtle text-success rounded-pill"><i class="bi bi-record-fill me-1"></i> Live</span>
+                    </div>
+
+                    <!-- Mini Board Demo Card -->
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="bg-white p-3 rounded-3 border shadow-sm">
+                                <span class="badge-status badge-inprogress mb-2">In Progress</span>
+                                <h6 class="fw-bold small mb-1">Design System & Component Library</h6>
+                                <p class="text-muted extra-small mb-2">Implement modern UI tokens and responsive views</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-danger-subtle text-danger extra-small">High Priority</span>
+                                    <div class="avatar avatar-sm">JD</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-white p-3 rounded-3 border shadow-sm">
+                                <span class="badge-status badge-done mb-2">Completed</span>
+                                <h6 class="fw-bold small mb-1">API Auth & JWT Token Refresh</h6>
+                                <p class="text-muted extra-small mb-2">Multi-factor authentication & session security</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-success-subtle text-success extra-small">100% Done</span>
+                                    <div class="avatar avatar-sm bg-success text-white">MK</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Modules Grid -->
+    <div class="mt-5 py-5 border-top">
+        <div class="text-center max-w-2xl mx-auto mb-5">
+            <h2 class="fw-bold text-dark mb-2">Complete End-to-End Task Modules</h2>
+            <p class="text-secondary">Designed for absolute clarity, ease of use, and maximum team efficiency.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 p-4 card-hover">
+                    <div class="avatar bg-primary-subtle text-primary mb-3" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">1. Auth & Profiles</h5>
+                    <p class="text-secondary small">Secure user registration, password resets, MFA security, session monitoring, and custom user bio profiles.</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100 p-4 card-hover">
+                    <div class="avatar bg-info-subtle text-info mb-3" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                        <i class="bi bi-diagram-3-fill"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">2. Workspaces & Projects</h5>
+                    <p class="text-secondary small">Organize teams into isolated workspaces, invite members with tokens, and track projects with custom budgets and roles.</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100 p-4 card-hover">
+                    <div class="avatar bg-success-subtle text-success mb-3" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                        <i class="bi bi-kanban-fill"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">3. Interactive Kanban</h5>
+                    <p class="text-secondary small">Smooth drag-and-drop task boards, interactive checklists, parent-child subtasks, and recurring rule scheduling.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

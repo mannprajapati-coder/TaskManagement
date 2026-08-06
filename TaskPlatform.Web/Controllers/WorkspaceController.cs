@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskPlatform.Shared.ApiService;
+using TaskPlatform.Shared.ViewModels.Project;
 using TaskPlatform.Shared.ViewModels.Workspace;
 
 namespace TaskPlatform.Web.Controllers
@@ -20,9 +23,17 @@ namespace TaskPlatform.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var token = GetAccessToken();
-            var response = await _apiService.GetMyWorkspacesAsync(token);
-            return View(response.Data ?? new System.Collections.Generic.List<WorkspaceViewModel>());
+            try
+            {
+                var token = GetAccessToken();
+                var response = await _apiService.GetMyWorkspacesAsync(token);
+                return View(response.Data ?? new List<WorkspaceViewModel>());
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "Unable to load workspaces. Please try again.";
+                return View(new List<WorkspaceViewModel>());
+            }
         }
 
         [HttpGet]
@@ -40,52 +51,79 @@ namespace TaskPlatform.Web.Controllers
                 return View(model);
             }
 
-            var token = GetAccessToken();
-            var response = await _apiService.CreateWorkspaceAsync(model, token);
-
-            if (!response.Success || response.Data == null)
+            try
             {
-                if (response.Message.Contains("401") || response.Message.Contains("Unauthorized"))
+                var token = GetAccessToken();
+                var response = await _apiService.CreateWorkspaceAsync(model, token);
+
+                if (!response.Success || response.Data == null)
                 {
-                    TempData["ErrorMessage"] = "Your session expired. Please log in again.";
-                    return RedirectToAction("Login", "Auth");
+                    if (response.Message.Contains("401") || response.Message.Contains("Unauthorized"))
+                    {
+                        TempData["ErrorMessage"] = "Your session expired. Please log in again.";
+                        return RedirectToAction("Login", "Auth");
+                    }
+                    ModelState.AddModelError(string.Empty, response.Message);
+                    return View(model);
                 }
-                ModelState.AddModelError(string.Empty, response.Message);
+
+                TempData["SuccessMessage"] = response.Message;
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError(string.Empty, "Error creating workspace. Please try again.");
                 return View(model);
             }
-
-            TempData["SuccessMessage"] = response.Message;
-            return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
         public async Task<IActionResult> Details(string id)
         {
-            var token = GetAccessToken();
-            var response = await _apiService.GetWorkspaceByIdAsync(id, token);
-
-            if (!response.Success || response.Data == null)
+            try
             {
-                TempData["ErrorMessage"] = response.Message;
+                var token = GetAccessToken();
+                var response = await _apiService.GetWorkspaceByIdAsync(id, token);
+
+                if (!response.Success || response.Data == null)
+                {
+                    TempData["ErrorMessage"] = response.Message;
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var projectsResp = await _apiService.GetWorkspaceProjectsAsync(id, token);
+                ViewBag.Projects = projectsResp?.Data ?? new List<ProjectViewModel>();
+
+                return View(response.Data);
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "Error loading workspace details.";
                 return RedirectToAction(nameof(Index));
             }
-
-            return View(response.Data);
         }
 
         [HttpGet]
         public async Task<IActionResult> Settings(string id)
         {
-            var token = GetAccessToken();
-            var response = await _apiService.GetWorkspaceByIdAsync(id, token);
-
-            if (!response.Success || response.Data == null)
+            try
             {
-                TempData["ErrorMessage"] = response.Message;
+                var token = GetAccessToken();
+                var response = await _apiService.GetWorkspaceByIdAsync(id, token);
+
+                if (!response.Success || response.Data == null)
+                {
+                    TempData["ErrorMessage"] = response.Message;
+                    return RedirectToAction(nameof(Index));
+                }
+
+                return View(response.Data);
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "Error loading workspace settings.";
                 return RedirectToAction(nameof(Index));
             }
-
-            return View(response.Data);
         }
 
         [HttpPost]
@@ -97,35 +135,50 @@ namespace TaskPlatform.Web.Controllers
                 return View("Settings", new WorkspaceViewModel { Id = model.WorkspaceId, Name = model.Name, Description = model.Description });
             }
 
-            var token = GetAccessToken();
-            var response = await _apiService.UpdateWorkspaceSettingsAsync(model, token);
-
-            if (response.Success)
+            try
             {
-                TempData["SuccessMessage"] = response.Message;
-            }
-            else
-            {
-                TempData["ErrorMessage"] = response.Message;
-            }
+                var token = GetAccessToken();
+                var response = await _apiService.UpdateWorkspaceSettingsAsync(model, token);
 
-            return RedirectToAction(nameof(Settings), new { id = model.WorkspaceId });
+                if (response.Success)
+                {
+                    TempData["SuccessMessage"] = response.Message;
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = response.Message;
+                }
+
+                return RedirectToAction(nameof(Settings), new { id = model.WorkspaceId });
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "Error updating workspace settings.";
+                return RedirectToAction(nameof(Settings), new { id = model.WorkspaceId });
+            }
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Archive(string id)
         {
-            var token = GetAccessToken();
-            var response = await _apiService.ArchiveWorkspaceAsync(id, token);
+            try
+            {
+                var token = GetAccessToken();
+                var response = await _apiService.ArchiveWorkspaceAsync(id, token);
 
-            if (response.Success)
-            {
-                TempData["SuccessMessage"] = response.Message;
+                if (response.Success)
+                {
+                    TempData["SuccessMessage"] = response.Message;
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = response.Message;
+                }
             }
-            else
+            catch (Exception)
             {
-                TempData["ErrorMessage"] = response.Message;
+                TempData["ErrorMessage"] = "Error archiving workspace.";
             }
 
             return RedirectToAction(nameof(Index));
@@ -135,17 +188,24 @@ namespace TaskPlatform.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> InviteMembers(InviteMembersRequestViewModel model)
         {
-            var token = GetAccessToken();
-            var response = await _apiService.InviteMembersAsync(model, token);
+            try
+            {
+                var token = GetAccessToken();
+                var response = await _apiService.InviteMembersAsync(model, token);
 
-            if (response.Success && response.Data != null)
-            {
-                TempData["InviteUrl"] = response.Data.InviteUrl;
-                TempData["SuccessMessage"] = response.Message;
+                if (response.Success && response.Data != null)
+                {
+                    TempData["InviteUrl"] = response.Data.InviteUrl;
+                    TempData["SuccessMessage"] = response.Message;
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = response.Message;
+                }
             }
-            else
+            catch (Exception)
             {
-                TempData["ErrorMessage"] = response.Message;
+                TempData["ErrorMessage"] = "Error creating invite link.";
             }
 
             return RedirectToAction(nameof(Settings), new { id = model.WorkspaceId });
@@ -166,17 +226,25 @@ namespace TaskPlatform.Web.Controllers
                 return View(model);
             }
 
-            var accessToken = GetAccessToken();
-            var response = await _apiService.JoinViaInviteAsync(model.Token, accessToken);
-
-            if (!response.Success)
+            try
             {
-                ModelState.AddModelError(string.Empty, response.Message);
+                var accessToken = GetAccessToken();
+                var response = await _apiService.JoinViaInviteAsync(model.Token, accessToken);
+
+                if (!response.Success)
+                {
+                    ModelState.AddModelError(string.Empty, response.Message);
+                    return View(model);
+                }
+
+                TempData["SuccessMessage"] = "Joined workspace successfully!";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError(string.Empty, "Error joining workspace.");
                 return View(model);
             }
-
-            TempData["SuccessMessage"] = "Joined workspace successfully!";
-            return RedirectToAction(nameof(Index));
         }
 
         private string GetAccessToken() => User.Claims.FirstOrDefault(c => c.Type == "AccessToken")?.Value ?? User.FindFirst("AccessToken")?.Value ?? string.Empty;

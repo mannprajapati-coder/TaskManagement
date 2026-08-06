@@ -7,6 +7,23 @@
     var csrfToken = document.querySelector('meta[name="request-verification-token"]')?.getAttribute('content') || '';
     var draggedCard = null;
 
+    function showToast(message, type) {
+        var toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) return;
+
+        var toastEl = document.createElement('div');
+        toastEl.className = 'toast align-items-center text-white bg-' + (type === 'danger' ? 'danger' : 'success') + ' border-0 shadow-lg mb-2';
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('aria-live', 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
+        toastEl.innerHTML = '<div class="d-flex"><div class="toast-body fw-medium"><i class="bi ' + (type === 'danger' ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill') + ' me-2"></i>' + message + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
+
+        toastContainer.appendChild(toastEl);
+        var bsToast = new bootstrap.Toast(toastEl, { delay: 6000 });
+        bsToast.show();
+        toastEl.addEventListener('hidden.bs.toast', function () { toastEl.remove(); });
+    }
+
     function postJson(url, payload) {
         return fetch(url, {
             method: 'POST',
@@ -16,9 +33,6 @@
             },
             body: JSON.stringify(payload)
         }).then(function (res) {
-            if (!res.ok) {
-                throw new Error('Request failed with status ' + res.status);
-            }
             return res.json();
         });
     }
@@ -105,7 +119,8 @@
                 OrderedTaskIds: orderedTaskIdsInColumn(columnBody)
             }).then(function (result) {
                 if (!result.success) {
-                    window.location.reload();
+                    showToast(result.message || 'Please complete all subtasks before marking the parent task as completed.', 'danger');
+                    setTimeout(function () { window.location.reload(); }, 1200);
                 }
             }).catch(function () {
                 window.location.reload();
@@ -139,11 +154,11 @@
                 if (result.success) {
                     window.location.reload();
                 } else {
-                    alert(result.message || 'Could not move task.');
+                    showToast(result.message || 'Please complete all subtasks before marking the parent task as completed.', 'danger');
                 }
             })
             .catch(function () {
-                alert('Could not move task. Please try again.');
+                showToast('Could not move task. Please complete all subtasks before marking the parent task as completed.', 'danger');
             });
     });
 })();

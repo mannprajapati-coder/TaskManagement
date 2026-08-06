@@ -3,60 +3,89 @@
     ViewData["Title"] = "Sign Up";
 }
 
-<div class="auth-wrapper">
-    <div class="auth-card">
-        <div class="text-center mb-4">
-            <h3 class="fw-bold text-dark mb-1">Create Account</h3>
-            <p class="text-muted small">Start managing your team's workflow today</p>
+<div class="py-4">
+    <div class="card border-0 shadow-xl rounded-4 overflow-hidden bg-white max-w-5xl mx-auto" style="max-width: 1000px;">
+        <div class="row g-0">
+            <!-- Left Column: Visual Illustration Hero -->
+            <div class="col-lg-6 text-white p-5 d-flex flex-column justify-content-between position-relative overflow-hidden" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+                <div class="position-relative z-1">
+                    <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-2 fw-semibold mb-3">
+                        <i class="bi bi-rocket-takeoff me-1"></i> Get Started Free
+                    </span>
+                    <h2 class="fw-extrabold text-white mb-2">Create Your Account</h2>
+                    <p class="text-white text-opacity-90 small">Join thousands of teams building projects, managing subtasks, and tracking workflows with ease.</p>
+                </div>
+
+                <!-- Hero Graphic Photo -->
+                <div class="my-4 text-center position-relative z-1">
+                    <img src="~/images/register_hero.png" alt="Task Platform Registration" class="img-fluid rounded-4 shadow-lg border border-white border-opacity-20 max-h-60" style="max-height: 260px; object-fit: cover;" />
+                </div>
+
+                <div class="position-relative z-1">
+                    <div class="d-flex align-items-center gap-3 text-white text-opacity-90 extra-small">
+                        <span><i class="bi bi-check-circle-fill text-warning me-1"></i> Free Workspaces</span>
+                        <span><i class="bi bi-check-circle-fill text-warning me-1"></i> Unlimited Tasks</span>
+                        <span><i class="bi bi-check-circle-fill text-warning me-1"></i> Real-time Alerts</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Registration Form -->
+            <div class="col-lg-6 p-4 p-md-5 d-flex flex-column justify-content-center">
+                <div class="mb-4">
+                    <h3 class="fw-bold text-dark mb-1">Join TaskPlatform Today</h3>
+                    <p class="text-secondary small">Fill in your details below to create your account.</p>
+                </div>
+
+                <form asp-action="Register" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small p-2 rounded-3 mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label small fw-bold text-dark">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                            <input asp-for="FullName" class="form-control border-start-0" placeholder="John Doe" autocomplete="name" />
+                        </div>
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label small fw-bold text-dark">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
+                            <input asp-for="Email" class="form-control border-start-0" placeholder="name@company.com" autocomplete="email" />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label small fw-bold text-dark">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
+                            <input asp-for="Password" type="password" class="form-control border-start-0" placeholder="••••••••" autocomplete="new-password" />
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ConfirmPassword" class="form-label small fw-bold text-dark">Confirm Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-check2-circle"></i></span>
+                            <input asp-for="ConfirmPassword" type="password" class="form-control border-start-0" placeholder="••••••••" autocomplete="new-password" />
+                        </div>
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-gradient w-100 py-3 mb-3 shadow-sm font-semibold">
+                        Create Account <i class="bi bi-check-lg ms-1"></i>
+                    </button>
+                </form>
+
+                <p class="text-center text-muted small mb-0">
+                    Already have an account? <a asp-action="Login" class="text-primary fw-bold text-decoration-none">Sign in</a>
+                </p>
+            </div>
         </div>
-
-        <form asp-action="Register" method="post">
-            @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
-
-            <div class="mb-3">
-                <label asp-for="FullName" class="form-label small fw-semibold">Full Name</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-person text-muted"></i></span>
-                    <input asp-for="FullName" class="form-control border-start-0" placeholder="John Doe" autocomplete="name" />
-                </div>
-                <span asp-validation-for="FullName" class="text-danger small"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Email" class="form-label small fw-semibold">Email Address</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-envelope text-muted"></i></span>
-                    <input asp-for="Email" class="form-control border-start-0" placeholder="name@company.com" autocomplete="email" />
-                </div>
-                <span asp-validation-for="Email" class="text-danger small"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label small fw-semibold">Password</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-lock text-muted"></i></span>
-                    <input asp-for="Password" type="password" class="form-control border-start-0" placeholder="••••••••" autocomplete="new-password" />
-                </div>
-                <span asp-validation-for="Password" class="text-danger small"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="ConfirmPassword" class="form-label small fw-semibold">Confirm Password</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-check2-circle text-muted"></i></span>
-                    <input asp-for="ConfirmPassword" type="password" class="form-control border-start-0" placeholder="••••••••" autocomplete="new-password" />
-                </div>
-                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
-            </div>
-
-            <button type="submit" class="btn btn-gradient w-100 mb-3 shadow-sm">
-                Create Account <i class="bi bi-check-lg ms-1"></i>
-            </button>
-        </form>
-
-        <p class="text-center text-muted small mb-0">
-            Already have an account? <a asp-action="Login" class="text-primary fw-semibold text-decoration-none">Log in</a>
-        </p>
     </div>
 </div>

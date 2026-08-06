@@ -3,56 +3,86 @@
     ViewData["Title"] = "Log In";
 }
 
-<div class="auth-wrapper">
-    <div class="auth-card">
-        <div class="text-center mb-4">
-            <h3 class="fw-bold text-dark mb-1">Welcome Back</h3>
-            <p class="text-muted small">Log in to manage your workspaces and projects</p>
-        </div>
-
-        <form asp-action="Login" method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]">
-            @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
-
-            <div class="mb-3">
-                <label asp-for="Email" class="form-label small fw-semibold">Email Address</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-envelope text-muted"></i></span>
-                    <input asp-for="Email" class="form-control border-start-0" placeholder="name@company.com" autocomplete="email" />
+<div class="py-4">
+    <div class="card border-0 shadow-xl rounded-4 overflow-hidden bg-white max-w-5xl mx-auto" style="max-width: 1000px;">
+        <div class="row g-0">
+            <!-- Left Column: Visual Illustration Hero -->
+            <div class="col-lg-6 bg-gradient-primary text-white p-5 d-flex flex-column justify-content-between position-relative overflow-hidden" style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);">
+                <div class="position-relative z-1">
+                    <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-2 fw-semibold mb-3">
+                        <i class="bi bi-shield-check me-1"></i> Secure Authentication
+                    </span>
+                    <h2 class="fw-extrabold text-white mb-2">Welcome Back</h2>
+                    <p class="text-white text-opacity-90 small">Log in to access your workspaces, project timelines, and real-time team task boards.</p>
                 </div>
-                <span asp-validation-for="Email" class="text-danger small"></span>
+
+                <!-- Hero Graphic Photo -->
+                <div class="my-4 text-center position-relative z-1">
+                    <img src="~/images/login_hero.png" alt="Task Platform Workflow" class="img-fluid rounded-4 shadow-lg border border-white border-opacity-20 max-h-60" style="max-height: 260px; object-fit: cover;" />
+                </div>
+
+                <div class="position-relative z-1">
+                    <div class="p-3 bg-white bg-opacity-10 rounded-3 border border-white border-opacity-10">
+                        <div class="d-flex align-items-center gap-2 small">
+                            <i class="bi bi-info-circle-fill text-warning"></i>
+                            <span>Quick Dev Test: <strong>admin@taskplatform.com</strong></span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <label asp-for="Password" class="form-label small fw-semibold mb-0">Password</label>
-                    <a asp-action="ForgotPassword" class="small text-decoration-none text-primary fw-medium">Forgot password?</a>
+            <!-- Right Column: Login Form -->
+            <div class="col-lg-6 p-4 p-md-5 d-flex flex-column justify-content-center">
+                <div class="mb-4">
+                    <h3 class="fw-bold text-dark mb-1">Sign In to Your Account</h3>
+                    <p class="text-secondary small">Enter your email and password to proceed to your workspace.</p>
                 </div>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-lock text-muted"></i></span>
-                    <input asp-for="Password" type="password" class="form-control border-start-0" placeholder="••••••••" autocomplete="current-password" />
+
+                <form asp-action="Login" method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small p-2 rounded-3 mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label small fw-bold text-dark">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
+                            <input asp-for="Email" class="form-control border-start-0" placeholder="admin@taskplatform.com" autocomplete="email" />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label asp-for="Password" class="form-label small fw-bold text-dark mb-0">Password</label>
+                            <a asp-action="ForgotPassword" class="small text-decoration-none text-primary fw-semibold">Forgot password?</a>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
+                            <input asp-for="Password" type="password" class="form-control border-start-0" placeholder="••••••••" autocomplete="current-password" />
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-gradient w-100 py-3 mb-3 shadow-sm font-semibold">
+                        Sign In <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </form>
+
+                <div class="position-relative my-3 text-center">
+                    <hr class="text-muted opacity-25" />
+                    <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted extra-small">OR</span>
                 </div>
-                <span asp-validation-for="Password" class="text-danger small"></span>
+
+                <button type="button" onclick="simulateGoogleLogin()" class="btn btn-outline-custom w-100 rounded-3 d-flex align-items-center justify-content-center gap-2 mb-4 py-2">
+                    <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+                    <span class="small fw-semibold text-dark">Sign in with Google</span>
+                </button>
+
+                <p class="text-center text-muted small mb-0">
+                    Don't have an account? <a asp-action="Register" class="text-primary fw-bold text-decoration-none">Create an account</a>
+                </p>
             </div>
-
-            <button type="submit" class="btn btn-gradient w-100 mb-3 shadow-sm">
-                Log In <i class="bi bi-arrow-right ms-1"></i>
-            </button>
-        </form>
-
-        <div class="position-relative my-4 text-center">
-            <hr class="text-muted opacity-25" />
-            <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted extra-small" style="font-size: 0.75rem;">OR CONTINUE WITH</span>
         </div>
-
-        <button type="button" onclick="simulateGoogleLogin()" class="btn btn-outline-secondary w-100 rounded-3 d-flex align-items-center justify-content-center gap-2 mb-4 py-2 border-secondary-subtle">
-            <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
-            <span class="small fw-semibold text-dark">Sign in with Google</span>
-        </button>
-
-        <p class="text-center text-muted small mb-0">
-            Don't have an account? <a asp-action="Register" class="text-primary fw-semibold text-decoration-none">Sign up</a>
-        </p>
     </div>
 </div>
 
@@ -69,8 +99,8 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                alert('Google authentication successful! Refreshing page...');
-                window.location.href = '/';
+                alert('Google authentication successful! Redirecting...');
+                window.location.href = '/Dashboard/Index';
             } else {
                 alert('Google login failed: ' + data.message);
             }
