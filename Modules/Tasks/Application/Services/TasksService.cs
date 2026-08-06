@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Modules.Projects.Domain.IServices;
 using Modules.Tasks.Domain.Entities;
 using Modules.Tasks.Domain.IServices;
 using Modules.Tasks.Infrastructure.Context;
+using Modules.Workspaces.Domain.IServices;
 using TaskPlatform.Shared.Exceptions;
 using TaskPlatform.Shared.ViewModels.Task;
 
@@ -14,10 +16,39 @@ namespace Modules.Tasks.Application.Services
     public class TasksService : ITasksService
     {
         private readonly TasksDbContext _dbContext;
+        private readonly IProjectsService _projectsService;
+        private readonly IWorkspaceService _workspaceService;
 
-        public TasksService(TasksDbContext dbContext)
+        public TasksService(TasksDbContext dbContext, IProjectsService projectsService, IWorkspaceService workspaceService)
         {
             _dbContext = dbContext;
+            _projectsService = projectsService;
+            _workspaceService = workspaceService;
+        }
+
+        private async Task EnsureCanModifyTaskAsync(Guid userId, TaskEntity task)
+        {
+            var isAssignee = await _dbContext.TaskAssignees
+                .AnyAsync(a => a.TaskId == task.Id && a.UserId == userId);
+            if (isAssignee) return;
+
+            var project = await _projectsService.GetProjectByIdAsync(task.ProjectId, userId);
+
+            var isProjectOwner = (await _projectsService.GetProjectMembersAsync(project.Id, userId))
+                .Any(m => m.UserId == userId && m.Role == "Owner");
+            if (isProjectOwner) return;
+
+            try
+            {
+                var workspace = await _workspaceService.GetWorkspaceByIdAsync(project.WorkspaceId, userId);
+                if (workspace.OwnerUserId == userId) return;
+            }
+            catch (PermissionDeniedException)
+            {
+                // Not a workspace member — fall through to denial.
+            }
+
+            throw new PermissionDeniedException("Only an assignee, the project owner, or the workspace owner can modify this task.");
         }
 
         public async Task<List<TaskViewModel>> GetProjectTasksAsync(Guid projectId, string? status = null, string? priority = null)
@@ -137,6 +168,8 @@ namespace Modules.Tasks.Application.Services
                 throw new DomainException("Task not found.");
             }
 
+            await EnsureCanModifyTaskAsync(userId, task);
+
             if (model.ActualHours.HasValue && model.ActualHours.Value < 0)
             {
                 throw new DomainException("Actual hours must be non-negative.");
@@ -202,6 +235,8 @@ namespace Modules.Tasks.Application.Services
                 throw new DomainException("Task not found.");
             }
 
+            await EnsureCanModifyTaskAsync(userId, task);
+
             if (!task.Status.Equals(model.Status, StringComparison.OrdinalIgnoreCase))
             {
                 await ApplyStatusChangeAsync(task, model.Status);
@@ -218,6 +253,8 @@ namespace Modules.Tasks.Application.Services
             {
                 throw new DomainException("Task not found.");
             }
+
+            await EnsureCanModifyTaskAsync(userId, task);
 
             if (!task.Status.Equals(model.Status, StringComparison.OrdinalIgnoreCase))
             {
@@ -255,6 +292,14 @@ namespace Modules.Tasks.Application.Services
                     throw new DomainException("Cannot mark parent task as Completed while incomplete subtasks remain.");
                 }
 
+                var hasIncompleteChecklist = await _dbContext.ChecklistItems
+                    .AnyAsync(c => c.TaskId == task.Id && !c.IsCompleted);
+
+                if (hasIncompleteChecklist)
+                {
+                    throw new DomainException("Cannot mark task as Completed while checklist items remain incomplete.");
+                }
+
                 if (!task.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
                 {
                     task.CompletedAt = DateTime.UtcNow;
@@ -280,6 +325,7 @@ namespace Modules.Tasks.Application.Services
             var task = await _dbContext.Tasks.FindAsync(taskId);
             if (task != null)
             {
+                await EnsureCanModifyTaskAsync(userId, task);
                 _dbContext.Tasks.Remove(task);
                 await _dbContext.SaveChangesAsync();
             }
@@ -315,6 +361,8 @@ namespace Modules.Tasks.Application.Services
             {
                 throw new DomainException("Parent task not found.");
             }
+
+            await EnsureCanModifyTaskAsync(userId, parentTask);
 
             var subtask = new TaskEntity
             {
@@ -358,6 +406,8 @@ namespace Modules.Tasks.Application.Services
             var parentTask = await _dbContext.Tasks.FindAsync(parentTaskId);
             if (parentTask != null)
             {
+                await EnsureCanModifyTaskAsync(userId, parentTask);
+
                 var subtasks = await _dbContext.Tasks
                     .Where(t => t.ParentTaskId == parentTaskId)
                     .ToListAsync();
@@ -401,6 +451,14 @@ namespace Modules.Tasks.Application.Services
 
         public async Task<TaskAssigneeViewModel> AddTaskAssigneeAsync(Guid userId, AddTaskAssigneeRequestViewModel model)
         {
+            var task = await _dbContext.Tasks.FindAsync(model.TaskId);
+            if (task == null)
+            {
+                throw new DomainException("Task not found.");
+            }
+
+            await EnsureCanModifyTaskAsync(userId, task);
+
             var existing = await _dbContext.TaskAssignees
                 .FirstOrDefaultAsync(a => a.TaskId == model.TaskId && a.UserId == model.UserId);
 
@@ -437,6 +495,14 @@ namespace Modules.Tasks.Application.Services
 
         public async Task<bool> RemoveTaskAssigneeAsync(Guid userId, Guid taskId, Guid targetUserId)
         {
+            var task = await _dbContext.Tasks.FindAsync(taskId);
+            if (task == null)
+            {
+                throw new DomainException("Task not found.");
+            }
+
+            await EnsureCanModifyTaskAsync(userId, task);
+
             var assignee = await _dbContext.TaskAssignees
                 .FirstOrDefaultAsync(a => a.TaskId == taskId && a.UserId == targetUserId);
 
@@ -518,6 +584,8 @@ namespace Modules.Tasks.Application.Services
             var task = await _dbContext.Tasks.FindAsync(model.TaskId);
             if (task == null) throw new DomainException("Task not found.");
 
+            await EnsureCanModifyTaskAsync(userId, task);
+
             var count = await _dbContext.ChecklistItems.CountAsync(c => c.TaskId == model.TaskId);
 
             var item = new ChecklistItem
@@ -549,6 +617,12 @@ namespace Modules.Tasks.Application.Services
             var item = await _dbContext.ChecklistItems.FindAsync(itemId);
             if (item == null) throw new DomainException("Checklist item not found.");
 
+            var task = await _dbContext.Tasks.FindAsync(item.TaskId);
+            if (task != null)
+            {
+                await EnsureCanModifyTaskAsync(userId, task);
+            }
+
             item.IsCompleted = !item.IsCompleted;
             await _dbContext.SaveChangesAsync();
             return true;
@@ -559,6 +633,12 @@ namespace Modules.Tasks.Application.Services
             var item = await _dbContext.ChecklistItems.FindAsync(itemId);
             if (item != null)
             {
+                var task = await _dbContext.Tasks.FindAsync(item.TaskId);
+                if (task != null)
+                {
+                    await EnsureCanModifyTaskAsync(userId, task);
+                }
+
                 _dbContext.ChecklistItems.Remove(item);
                 await _dbContext.SaveChangesAsync();
             }

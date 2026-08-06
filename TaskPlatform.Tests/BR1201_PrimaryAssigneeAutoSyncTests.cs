@@ -20,7 +20,7 @@ namespace TaskPlatform.Tests
                 .Options;
 
             using var dbContext = new TasksDbContext(options);
-            var service = new TasksService(dbContext);
+            var service = TasksServiceTestFactory.Create(dbContext);
             var creatorId = Guid.NewGuid();
             var assigneeUserId = Guid.NewGuid();
 

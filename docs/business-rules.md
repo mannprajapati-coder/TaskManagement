@@ -36,13 +36,14 @@ Validation logic, edge cases, and calculations that aren't obvious just from rea
 ### Module 12 — Task Assignment
 - **BR-12-01**: `PrimaryAssigneeId` must always be a member of the `TaskAssignee` set — assigning a new primary assignee who isn't already a co-assignee adds them to `TaskAssignee` in the same operation.
 - **BR-12-02**: A Watcher is not notified of *every* activity (that's what following the full Activity Timeline is for) — only of Status changes, new Comments, and due-date changes, to keep Module 19 notification volume sane.
+- **BR-12-03**: Editing, completing, or deleting a Task (or Subtask) — and adding/toggling/deleting its Checklist items — is restricted to that Task's assignee(s), the owning Project's Owner, or the Workspace Owner. Anyone else is rejected with a permission error (HTTP 403), even if they're authenticated. Creating a new Task/Subtask is unrestricted (the creator has no assignee to check against yet); comments, attachments, watching, and recurring rules are unaffected by this rule.
 
 ### Module 13 — Dependencies
 - **BR-13-01**: A Task with an incomplete predecessor cannot transition to any "in progress"-family status (checked against the Board's own column semantics, Module 20) — attempting to do so (via API, drag-drop, or bulk action) returns a specific "blocked by predecessor" error naming the blocking Task, never a generic validation failure.
 - **BR-13-02**: Circular dependencies (A→B→C→A) are rejected at creation time with a cycle-detection check before the new `TaskDependency` row is persisted — never allowed to exist even transiently.
 
 ### Module 14 — Checklist
-- **BR-14-01**: Checklist completion contributes to a Task's own "progress" display (e.g. "3/5 items") but does **not** by itself change the Task's Status — completing all items is a signal to the human, not an automatic status transition (avoids surprising auto-completion).
+- **BR-14-01**: Checklist completion contributes to a Task's own "progress" display (e.g. "3/5 items"). A Task with at least one checklist item **cannot** transition to "Completed" while any item remains unchecked — attempting to do so returns a validation error rather than silently completing with unfinished items. A Task with zero checklist items is unaffected by this rule.
 
 ### Module 15 — Recurring Tasks
 - **BR-15-01**: The next occurrence is generated when the current occurrence's due date passes **or** it's marked complete, whichever comes first — never both (idempotent generation, guarded by a unique constraint on `(RecurrenceRuleId, OccurrenceSequence)`).

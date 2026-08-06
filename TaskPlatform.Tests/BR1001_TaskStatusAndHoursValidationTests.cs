@@ -21,7 +21,7 @@ namespace TaskPlatform.Tests
                 .Options;
 
             using var dbContext = new TasksDbContext(options);
-            var service = new TasksService(dbContext);
+            var service = TasksServiceTestFactory.Create(dbContext);
             var userId = Guid.NewGuid();
 
             var createModel = new CreateTaskRequestViewModel
@@ -68,7 +68,7 @@ namespace TaskPlatform.Tests
                 .Options;
 
             using var dbContext = new TasksDbContext(options);
-            var service = new TasksService(dbContext);
+            var service = TasksServiceTestFactory.Create(dbContext);
             var userId = Guid.NewGuid();
 
             var createModel = new CreateTaskRequestViewModel
@@ -100,7 +100,7 @@ namespace TaskPlatform.Tests
                 .Options;
 
             using var dbContext = new TasksDbContext(options);
-            var service = new TasksService(dbContext);
+            var service = TasksServiceTestFactory.Create(dbContext);
             var userId = Guid.NewGuid();
 
             var createModel = new CreateTaskRequestViewModel

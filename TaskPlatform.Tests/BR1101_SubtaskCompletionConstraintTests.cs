@@ -21,7 +21,7 @@ namespace TaskPlatform.Tests
                 .Options;
 
             using var dbContext = new TasksDbContext(options);
-            var service = new TasksService(dbContext);
+            var service = TasksServiceTestFactory.Create(dbContext);
             var userId = Guid.NewGuid();
 
             var parentTask = await service.CreateTaskAsync(userId, new CreateTaskRequestViewModel

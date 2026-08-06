@@ -16,6 +16,7 @@
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
     var checklistDone = checklistItems.Count(c => c.IsCompleted);
     var checklistPct = checklistItems.Count > 0 ? (int)Math.Round(100.0 * checklistDone / checklistItems.Count) : 0;
+    var canModify = ViewBag.CanModify as bool? ?? false;
 
     string FormatFileSize(long bytes)
     {
@@ -116,62 +117,84 @@
                     </div>
 
                     <h5 class="fw-bold mb-3">Update Status</h5>
-                    <form id="statusForm" asp-action="UpdateStatus" method="post" class="d-flex gap-2 mb-4 align-items-center">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="TaskId" value="@Model.Id" />
-                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
-
-                        <select name="Status" id="statusSelect" class="form-select rounded-pill" style="max-width: 240px;">
-                            <option value="Todo" selected="@(Model.Status == "Todo")">Todo</option>
-                            <option value="InProgress" selected="@(Model.Status == "InProgress")">In Progress</option>
-                            <option value="InReview" selected="@(Model.Status == "InReview")">In Review</option>
-                            <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
-                            <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
-                        </select>
-                        <button type="submit" class="btn btn-gradient rounded-pill px-4">Update Status</button>
-                        <span id="statusUpdateFeedback" class="extra-small text-success d-none"><i class="bi bi-check-circle-fill me-1"></i>Updated</span>
-                    </form>
-
-                    <div class="d-flex justify-content-end">
-                        <form asp-action="Delete" method="post" class="d-inline">
+                    @if (canModify)
+                    {
+                        <form id="statusForm" asp-action="UpdateStatus" method="post" class="d-flex gap-2 mb-4 align-items-center task-status-form">
                             @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="TaskId" value="@Model.Id" />
                             <input type="hidden" name="projectId" value="@Model.ProjectId" />
-                            <button type="submit" onclick="return confirm('Delete this task and all its subtasks?')" class="btn btn-outline-danger btn-sm rounded-pill px-3">Delete Task</button>
+
+                            <select name="Status" id="statusSelect" class="form-select rounded-pill" style="max-width: 240px;">
+                                <option value="Todo" selected="@(Model.Status == "Todo")">Todo</option>
+                                <option value="InProgress" selected="@(Model.Status == "InProgress")">In Progress</option>
+                                <option value="InReview" selected="@(Model.Status == "InReview")">In Review</option>
+                                <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
+                                <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                            </select>
+                            <button type="submit" class="btn btn-gradient rounded-pill px-4">Update Status</button>
+                            <span id="statusUpdateFeedback" class="extra-small text-success d-none"><i class="bi bi-check-circle-fill me-1"></i>Updated</span>
                         </form>
-                    </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted small mb-4"><i class="bi bi-lock-fill me-1"></i>Only an assignee, the project owner, or the workspace owner can update this task.</p>
+                    }
+
+                    @if (canModify)
+                    {
+                        <div class="d-flex justify-content-end">
+                            <form asp-action="Delete" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                <button type="submit" onclick="return confirm('Delete this task and all its subtasks?')" class="btn btn-outline-danger btn-sm rounded-pill px-3">Delete Task</button>
+                            </form>
+                        </div>
+                    }
                 </div>
             </div>
 
-            <!-- Subtasks Section (Sprint 05) -->
+            <!-- Subtasks Section -->
             <div class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body p-4">
                     <h5 class="fw-bold text-dark mb-3"><i class="bi bi-diagram-2 me-2 text-primary"></i> Subtasks (@subtasks.Count)</h5>
-                    
+
                     @if (subtasks.Any())
                     {
-                        <ul class="list-group list-group-flush mb-4">
+                        <div class="accordion mb-4" id="subtaskAccordion">
                             @foreach (var st in subtasks)
                             {
-                                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2 border-bottom">
-                                    <div>
-                                        <span class="fw-semibold @(st.Status == "Completed" ? "text-decoration-line-through text-muted" : "text-dark")">@st.Title</span>
+                                <div class="accordion-item border-0 border-bottom subtask-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed bg-transparent px-0 py-2 shadow-none subtask-toggle"
+                                                type="button" data-bs-toggle="collapse" data-bs-target="#subtask-@st.Id"
+                                                data-subtask-id="@st.Id" data-project-id="@st.ProjectId">
+                                            <span class="fw-semibold @(st.Status == "Completed" ? "text-decoration-line-through text-muted" : "text-dark") me-2">@st.Title</span>
+                                            <span class="badge @TaskStatusDisplay.GetBadgeClass(st.Status) rounded-pill">@TaskStatusDisplay.GetLabel(st.Status)</span>
+                                        </button>
+                                    </h2>
+                                    <div id="subtask-@st.Id" class="accordion-collapse collapse" data-bs-parent="#subtaskAccordion">
+                                        <div class="accordion-body px-0 subtask-panel-container" data-subtask-id="@st.Id">
+                                            <div class="text-muted small py-2"><i class="bi bi-hourglass-split me-1"></i>Loading...</div>
+                                        </div>
                                     </div>
-                                    <span class="badge @TaskStatusDisplay.GetBadgeClass(st.Status) rounded-pill">@TaskStatusDisplay.GetLabel(st.Status)</span>
-                                </li>
+                                </div>
                             }
-                        </ul>
+                        </div>
                     }
 
-                    <form asp-action="CreateSubtask" method="post" class="mt-3">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="ParentTaskId" value="@Model.Id" />
-                        <input type="hidden" name="ProjectId" value="@Model.ProjectId" />
-                        <div class="input-group">
-                            <input type="text" name="Title" class="form-control form-control-sm" placeholder="Add a new subtask..." required />
-                            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Add Subtask</button>
-                        </div>
-                    </form>
+                    @if (canModify)
+                    {
+                        <form asp-action="CreateSubtask" method="post" class="mt-3">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="ParentTaskId" value="@Model.Id" />
+                            <input type="hidden" name="ProjectId" value="@Model.ProjectId" />
+                            <div class="input-group">
+                                <input type="text" name="Title" class="form-control form-control-sm" placeholder="Add a new subtask..." required />
+                                <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Add Subtask</button>
+                            </div>
+                        </form>
+                    }
                 </div>
             </div>
 
@@ -244,12 +267,15 @@
                                                 {
                                                     <span class="badge bg-primary-subtle text-primary border border-primary rounded-pill badge-sm">Primary</span>
                                                 }
-                                                <form asp-action="RemoveAssignee" method="post" class="d-inline">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="taskId" value="@Model.Id" />
-                                                    <input type="hidden" name="targetUserId" value="@a.UserId" />
-                                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Remove assignee"><i class="bi bi-x-lg"></i></button>
-                                                </form>
+                                                @if (canModify)
+                                                {
+                                                    <form asp-action="RemoveAssignee" method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="taskId" value="@Model.Id" />
+                                                        <input type="hidden" name="targetUserId" value="@a.UserId" />
+                                                        <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Remove assignee"><i class="bi bi-x-lg"></i></button>
+                                                    </form>
+                                                }
                                             </div>
                                         </li>
                                     }
@@ -260,7 +286,7 @@
                                 <p class="text-muted small mb-3">No one is assigned to this task yet.</p>
                             }
 
-                            @if (unassignedMembers.Any())
+                            @if (canModify && unassignedMembers.Any())
                             {
                                 <form asp-action="AddAssignee" method="post" class="d-flex gap-2 align-items-center">
                                     @Html.AntiForgeryToken()
@@ -296,10 +322,13 @@
                                     {
                                         <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2 border-bottom checklist-item" data-item-id="@item.Id">
                                             <div class="form-check">
-                                                <input class="form-check-input checklist-toggle" type="checkbox" data-item-id="@item.Id" id="chk-@item.Id" @(item.IsCompleted ? "checked" : "") />
+                                                <input class="form-check-input checklist-toggle" type="checkbox" data-item-id="@item.Id" id="chk-@item.Id" @(item.IsCompleted ? "checked" : "") disabled="@(!canModify)" />
                                                 <label class="form-check-label @(item.IsCompleted ? "text-decoration-line-through text-muted" : "text-dark")" for="chk-@item.Id">@item.Title</label>
                                             </div>
-                                            <button type="button" class="btn btn-sm btn-link text-danger p-0 checklist-delete" data-item-id="@item.Id" title="Delete item"><i class="bi bi-x-lg"></i></button>
+                                            @if (canModify)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-link text-danger p-0 checklist-delete" data-item-id="@item.Id" title="Delete item"><i class="bi bi-x-lg"></i></button>
+                                            }
                                         </li>
                                     }
                                 </ul>
@@ -309,14 +338,17 @@
                                 <p class="text-muted small mb-3">No checklist items yet.</p>
                             }
 
-                            <form asp-action="AddChecklistItem" method="post" class="mt-2">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="TaskId" value="@Model.Id" />
-                                <div class="input-group">
-                                    <input type="text" name="Title" class="form-control form-control-sm" placeholder="Add a checklist item..." required maxlength="200" />
-                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Add</button>
-                                </div>
-                            </form>
+                            @if (canModify)
+                            {
+                                <form asp-action="AddChecklistItem" method="post" class="mt-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="TaskId" value="@Model.Id" />
+                                    <div class="input-group">
+                                        <input type="text" name="Title" class="form-control form-control-sm" placeholder="Add a checklist item..." required maxlength="200" />
+                                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Add</button>
+                                    </div>
+                                </form>
+                            }
                         </div>
 
                         <!-- Comments -->

@@ -157,17 +157,78 @@ namespace TaskPlatform.Web.Controllers
             var membersResp = await _apiService.GetProjectMembersAsync(response.Data.ProjectId.ToString(), token);
             var activityResp = await _apiService.GetTaskActivityAsync(id, token);
 
+            var assignees = assigneesResp.Data ?? new List<TaskAssigneeViewModel>();
+            var projectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
+
             ViewBag.Subtasks = subtasksResp.Data ?? new List<SubtaskViewModel>();
-            ViewBag.Assignees = assigneesResp.Data ?? new List<TaskAssigneeViewModel>();
+            ViewBag.Assignees = assignees;
             ViewBag.Watchers = watchersResp.Data ?? new List<TaskWatcherViewModel>();
             ViewBag.ChecklistItems = checklistResp.Data ?? new List<ChecklistItemViewModel>();
             ViewBag.RecurringRule = recurringResp.Success ? recurringResp.Data : null;
             ViewBag.Comments = commentsResp.Data ?? new List<CommentViewModel>();
             ViewBag.Attachments = attachmentsResp.Data ?? new List<AttachmentViewModel>();
-            ViewBag.ProjectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
+            ViewBag.ProjectMembers = projectMembers;
             ViewBag.ActivityLogs = activityResp.Data ?? new List<TaskPlatform.Shared.ViewModels.Notification.ActivityLogViewModel>();
+            ViewBag.CanModify = await ComputeCanModifyAsync(response.Data.ProjectId, assignees, projectMembers, token);
 
             return View(response.Data);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetSubtaskPanel(Guid id, Guid projectId)
+        {
+            var token = GetAccessToken();
+
+            var subtaskResp = await _apiService.GetTaskByIdAsync(id.ToString(), token);
+            if (!subtaskResp.Success || subtaskResp.Data == null)
+            {
+                return NotFound();
+            }
+
+            var checklistResp = await _apiService.GetChecklistItemsAsync(id.ToString(), token);
+            var assigneesResp = await _apiService.GetTaskAssigneesAsync(id.ToString(), token);
+            var membersResp = await _apiService.GetProjectMembersAsync(projectId.ToString(), token);
+
+            var assignees = assigneesResp.Data ?? new List<TaskAssigneeViewModel>();
+            var projectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
+
+            ViewBag.ChecklistItems = checklistResp.Data ?? new List<ChecklistItemViewModel>();
+            ViewBag.Assignees = assignees;
+            ViewBag.ProjectMembers = projectMembers;
+            ViewBag.CanModify = await ComputeCanModifyAsync(projectId, assignees, projectMembers, token);
+
+            return PartialView("_SubtaskPanel", subtaskResp.Data);
+        }
+
+        private async Task<bool> ComputeCanModifyAsync(Guid projectId, List<TaskAssigneeViewModel> assignees, List<ProjectMemberViewModel> projectMembers, string token)
+        {
+            var currentUserIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdClaim, out var currentUserId))
+            {
+                return false;
+            }
+
+            if (assignees.Any(a => a.UserId == currentUserId))
+            {
+                return true;
+            }
+
+            if (projectMembers.Any(m => m.UserId == currentUserId && m.Role == "Owner"))
+            {
+                return true;
+            }
+
+            var projectResp = await _apiService.GetProjectByIdAsync(projectId.ToString(), token);
+            if (projectResp.Success && projectResp.Data != null)
+            {
+                var workspaceResp = await _apiService.GetWorkspaceByIdAsync(projectResp.Data.WorkspaceId.ToString(), token);
+                if (workspaceResp.Success && workspaceResp.Data != null && workspaceResp.Data.OwnerUserId == currentUserId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         [HttpPost]
