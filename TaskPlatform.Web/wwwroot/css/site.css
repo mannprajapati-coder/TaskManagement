@@ -8,19 +8,17 @@
 
 :root {
     --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-
+    
     /* Strict 2-Color Combination Palette */
-    --color-primary: #D96846;
-    /* Color 1: Terracotta Coral */
+    --color-primary: #D96846;          /* Color 1: Terracotta Coral */
     --color-primary-hover: #c45534;
     --color-primary-light: #fdf3f0;
     --color-primary-tint: #fae4dd;
 
-    --color-dark: #2F3020;
-    /* Color 2: Forest Dark Charcoal */
+    --color-dark: #2F3020;             /* Color 2: Forest Dark Charcoal */
     --color-dark-light: #484936;
     --color-dark-tint: #f5f6f3;
-
+    
     /* Token Mappings */
     --primary: var(--color-primary);
     --primary-hover: var(--color-primary-hover);
@@ -34,18 +32,18 @@
     --bg-glass: rgba(250, 249, 248, 0.94);
     --border-color: #e6e3df;
     --border-light: #f0eee9;
-
+    
     --text-primary: var(--color-dark);
     --text-secondary: var(--color-dark-light);
     --text-muted: #797b66;
-
-    /* Elevation Shadows */
+    
+    /* Soft Multi-Layer Shadows */
     --shadow-xs: 0 1px 2px 0 rgba(47, 48, 32, 0.04);
     --shadow-sm: 0 1px 3px 0 rgba(47, 48, 32, 0.06), 0 1px 2px -1px rgba(47, 48, 32, 0.04);
     --shadow-md: 0 4px 6px -1px rgba(47, 48, 32, 0.08), 0 2px 4px -2px rgba(47, 48, 32, 0.04);
     --shadow-lg: 0 10px 15px -3px rgba(47, 48, 32, 0.1), 0 4px 6px -4px rgba(47, 48, 32, 0.03);
     --shadow-xl: 0 20px 25px -5px rgba(47, 48, 32, 0.12), 0 8px 10px -6px rgba(47, 48, 32, 0.04);
-
+    
     --radius-sm: 0.375rem;
     --radius-md: 0.625rem;
     --radius-lg: 1rem;
@@ -53,34 +51,26 @@
 }
 
 /* =====================================================================
-   DARK MODE OVERRIDES [data-theme="dark"]
+   PREMIUM OBSIDIAN NAVY DARK THEME OVERRIDES [data-theme="dark"]
    ===================================================================== */
 [data-theme="dark"] {
-    --bg-surface: #181911;
-    --bg-card: #23251a;
-    --bg-glass: rgba(24, 25, 17, 0.94);
-    --border-color: #383a2b;
-    --border-light: #2c2e22;
-    --color-dark-tint: #2c2e22;
+    --bg-surface: #12131a;
+    --bg-card: #1a1c26;
+    --bg-glass: rgba(18, 19, 26, 0.94);
+    --border-color: #2d3142;
+    --border-light: #232634;
+    --color-dark-tint: #232634;
 
-    --text-primary: #f4f3ed;
-    --text-secondary: #cdcbbd;
-    --text-muted: #969884;
+    --text-primary: #f0f2f8;
+    --text-secondary: #a0a5b8;
+    --text-muted: #6c7287;
+    
+    --color-primary-light: rgba(217, 104, 70, 0.15);
+    --color-primary-tint: rgba(217, 104, 70, 0.25);
 
-    /* Terracotta accent stays identical in both themes; only its tinted/washed
-       variants need to shift from "near-white" to a translucent dark-safe wash,
-       since badges/hover-states/the selected-card rule all key off these vars. */
-    --color-primary-light: rgba(217, 104, 70, 0.16);
-    --color-primary-tint: rgba(217, 104, 70, 0.32);
-
-    /* Shadows tuned for a dark surface: the light-theme shadows are a charcoal-based
-       rgba meant to read against a pale background, and look muddy once the surface
-       itself is already dark — switch to a black-based rgba instead. */
-    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.24);
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.24);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.35), 0 2px 4px -2px rgba(0, 0, 0, 0.24);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.45), 0 8px 10px -6px rgba(0, 0, 0, 0.25);
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 8px 0 rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="dark"] body {
@@ -88,8 +78,7 @@
     color: var(--text-primary);
 }
 
-[data-theme="dark"] .bg-white,
-[data-theme="dark"] .bg-light {
+[data-theme="dark"] .bg-white, [data-theme="dark"] .bg-light {
     background-color: var(--bg-card) !important;
     color: var(--text-primary) !important;
 }
@@ -102,21 +91,18 @@
     color: var(--text-secondary) !important;
 }
 
-[data-theme="dark"] .border,
-[data-theme="dark"] .border-bottom,
-[data-theme="dark"] .border-top {
+[data-theme="dark"] .border, [data-theme="dark"] .border-bottom, [data-theme="dark"] .border-top, [data-theme="dark"] .border-end {
     border-color: var(--border-color) !important;
 }
 
-[data-theme="dark"] .form-control,
-[data-theme="dark"] .form-select {
-    background-color: #1c1d14;
+[data-theme="dark"] .form-control, [data-theme="dark"] .form-select {
+    background-color: #161720;
     border-color: var(--border-color);
     color: var(--text-primary);
 }
 
 [data-theme="dark"] .kanban-column {
-    background: #1c1d14;
+    background: #161720;
     border-color: var(--border-color);
 }
 
@@ -125,12 +111,19 @@
     border-color: var(--border-color);
 }
 
-[data-theme="dark"] .avatar {
-    border-color: var(--bg-card);
+[data-theme="dark"] .dropdown-menu {
+    background-color: #1a1c26;
+    border-color: #2d3142;
+    color: #f0f2f8;
 }
 
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
-    background: #3a3c2c;
+[data-theme="dark"] .dropdown-item {
+    color: #f0f2f8;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+    background-color: rgba(217, 104, 70, 0.15);
+    color: var(--color-primary);
 }
 
 html {
@@ -207,7 +200,7 @@ body {
     text-decoration: none;
 }
 
-.nav-link {
+.navbar-nav .nav-link {
     font-weight: 600;
     color: var(--text-secondary) !important;
     padding: 0.5rem 0.9rem !important;
@@ -215,14 +208,62 @@ body {
     transition: all 0.2s ease;
 }
 
-.nav-link:hover,
-.nav-link.active {
+.navbar-nav .nav-link:hover {
     color: var(--color-primary) !important;
     background-color: var(--color-primary-light);
 }
 
+.navbar-nav .nav-link.active {
+    color: var(--color-primary) !important;
+    background-color: var(--color-primary-light);
+    border: 1px solid var(--color-primary-tint);
+}
+
 .hover-primary:hover {
     color: var(--color-primary) !important;
+}
+
+/* Navigation Pills (Tabbed Widgets Styling) */
+.nav-pills {
+    gap: 0.5rem;
+}
+
+.nav-pills .nav-link {
+    font-weight: 600;
+    color: var(--text-secondary) !important;
+    background-color: var(--color-dark-tint);
+    border: 1.5px solid var(--border-color);
+    padding: 0.55rem 1.15rem !important;
+    border-radius: 9999px !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.nav-pills .nav-link:hover {
+    color: var(--color-primary) !important;
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary-tint);
+    transform: translateY(-1px);
+}
+
+.nav-pills .nav-link.active {
+    color: #ffffff !important;
+    background: var(--primary-gradient) !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 14px rgba(217, 104, 70, 0.35) !important;
+    transform: translateY(-1px);
+}
+
+.nav-pills .nav-link.active .badge {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+.nav-pills .nav-link .badge {
+    transition: all 0.2s ease;
 }
 
 /* Buttons using 2-Color Scheme */
@@ -448,12 +489,6 @@ body {
     transform: scale(0.98);
 }
 
-.task-card.selected {
-    border-color: var(--color-primary);
-    background: var(--color-primary-light);
-    box-shadow: var(--shadow-md);
-}
-
 /* Progress bar styling */
 .progress-sm {
     height: 10px;
@@ -473,7 +508,7 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: var(--color-dark);
+    background: var(--color-primary);
     color: #ffffff;
     display: inline-flex;
     align-items: center;
