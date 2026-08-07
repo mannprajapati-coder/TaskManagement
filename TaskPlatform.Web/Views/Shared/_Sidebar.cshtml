@@ -1,0 +1,79 @@
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var project = ViewBag.Project as TaskPlatform.Shared.ViewModels.Project.ProjectViewModel;
+    var currentProjectId = ViewBag.CurrentProjectId as string ?? project?.Id.ToString();
+}
+
+<aside id="appSidebar" class="app-sidebar shadow-sm">
+    <div class="sidebar-header p-3 d-flex align-items-center justify-content-between border-bottom">
+        <a class="d-flex align-items-center gap-2 text-decoration-none" href="/Dashboard/Index">
+            <div class="avatar avatar-sm bg-gradient text-white shadow-sm" style="background: var(--color-primary);">
+                <i class="bi bi-kanban"></i>
+            </div>
+            <span class="fw-extrabold tracking-tight text-dark sidebar-brand-text">TaskPlatform</span>
+        </a>
+        <button type="button" id="sidebarToggleBtn" class="btn btn-sm btn-light rounded-circle border-0 shadow-xs" title="Toggle Sidebar">
+            <i class="bi bi-layout-sidebar-inset fs-6 text-secondary"></i>
+        </button>
+    </div>
+
+    <div class="sidebar-body py-3 px-2 overflow-y-auto">
+        <!-- Main Workflows Section -->
+        <div class="sidebar-section mb-3">
+            <div class="sidebar-section-title px-3 mb-2 text-uppercase extra-small font-bold tracking-wider text-muted">Core Workflows</div>
+            <nav class="nav flex-column gap-1">
+                <a asp-controller="Dashboard" asp-action="Index" class="nav-link sidebar-link @(controller == "Dashboard" ? "active" : "")">
+                    <i class="bi bi-grid-1x2-fill sidebar-icon text-primary"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+                <a asp-controller="Workspace" asp-action="Index" class="nav-link sidebar-link @(controller == "Workspace" ? "active" : "")">
+                    <i class="bi bi-diagram-3-fill sidebar-icon text-info"></i>
+                    <span class="sidebar-text">Workspaces</span>
+                </a>
+                <a asp-controller="Task" asp-action="MyTasks" class="nav-link sidebar-link @(controller == "Task" && action == "MyTasks" ? "active" : "")">
+                    <i class="bi bi-check2-square sidebar-icon text-success"></i>
+                    <span class="sidebar-text">My Tasks</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Task & Project Views Section -->
+        <div class="sidebar-section mb-3">
+            <div class="sidebar-section-title px-3 mb-2 text-uppercase extra-small font-bold tracking-wider text-muted">Task & Project Views</div>
+            <nav class="nav flex-column gap-1">
+                <a asp-controller="Task" asp-action="Index" asp-route-projectId="@currentProjectId" class="nav-link sidebar-link @(controller == "Task" && action == "Index" ? "active" : "")">
+                    <i class="bi bi-kanban-fill sidebar-icon text-warning"></i>
+                    <span class="sidebar-text">Kanban Board</span>
+                </a>
+                <a asp-controller="Task" asp-action="Gantt" asp-route-projectId="@currentProjectId" class="nav-link sidebar-link @(controller == "Task" && action == "Gantt" ? "active" : "")">
+                    <i class="bi bi-bar-chart-steps sidebar-icon text-danger"></i>
+                    <span class="sidebar-text">Gantt Chart</span>
+                </a>
+                <a asp-controller="Task" asp-action="ChecklistHub" asp-route-projectId="@currentProjectId" class="nav-link sidebar-link @(controller == "Task" && action == "ChecklistHub" ? "active" : "")">
+                    <i class="bi bi-list-check sidebar-icon text-purple" style="color: #8b5cf6;"></i>
+                    <span class="sidebar-text">Checklist Hub</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Productivity & Analytics Section -->
+        <div class="sidebar-section mb-3">
+            <div class="sidebar-section-title px-3 mb-2 text-uppercase extra-small font-bold tracking-wider text-muted">Time & Productivity</div>
+            <nav class="nav flex-column gap-1">
+                <a asp-controller="TimeTracking" asp-action="Report" class="nav-link sidebar-link @(controller == "TimeTracking" ? "active" : "")">
+                    <i class="bi bi-stopwatch-fill sidebar-icon text-primary"></i>
+                    <span class="sidebar-text">Time Audit Report</span>
+                </a>
+                <a asp-controller="Calendar" asp-action="Index" class="nav-link sidebar-link @(controller == "Calendar" ? "active" : "")">
+                    <i class="bi bi-calendar3 sidebar-icon text-secondary"></i>
+                    <span class="sidebar-text">Calendar Schedule</span>
+                </a>
+                <a asp-controller="Notifications" asp-action="Index" class="nav-link sidebar-link @(controller == "Notifications" ? "active" : "")">
+                    <i class="bi bi-bell-fill sidebar-icon text-warning"></i>
+                    <span class="sidebar-text">Notifications</span>
+                </a>
+            </nav>
+        </div>
+    </div>
+</aside>

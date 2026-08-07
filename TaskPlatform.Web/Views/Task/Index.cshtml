@@ -4,6 +4,7 @@
     string? currentPriority = ViewBag.CurrentPriority as string;
     ViewData["Title"] = $"{project?.Name ?? "Project"} Tasks";
     var priorities = new[] { "Low", "Medium", "High", "Urgent" };
+    var projectLookup = ViewBag.ProjectLookup as Dictionary<Guid, TaskPlatform.Shared.ViewModels.Project.ProjectViewModel> ?? new();
 }
 
 <div class="py-2">
@@ -12,12 +13,25 @@
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
                 <h3 class="fw-extrabold text-dark mb-0">Interactive Kanban Board</h3>
-                <span class="badge bg-primary-subtle text-primary rounded-pill px-3 fw-bold">@project?.Name</span>
+                @if (project != null)
+                {
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3 fw-bold">@project.Name</span>
+                }
             </div>
-            <p class="text-secondary small mb-0">Drag & drop tasks between status columns or use quick action menus.</p>
+            <p class="text-secondary small mb-0">Drag & drop tasks between status columns or filter by project.</p>
         </div>
 
         <div class="d-flex gap-2 flex-wrap align-items-center">
+            @if (projectLookup.Any())
+            {
+                <select id="projectFilter" class="form-select form-select-sm rounded-pill shadow-sm" style="min-width: 180px;" onchange="location.href='?projectId=' + this.value;">
+                    @foreach (var p in projectLookup.Values)
+                    {
+                        <option value="@p.Id" selected="@(project?.Id == p.Id)">@p.Name</option>
+                    }
+                </select>
+            }
+
             <select id="priorityFilter" class="form-select form-select-sm rounded-pill shadow-sm" style="width: 160px;">
                 <option value="">All Priorities</option>
                 @foreach (var p in priorities)
