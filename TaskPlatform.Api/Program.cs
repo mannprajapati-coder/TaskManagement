@@ -14,6 +14,7 @@ using Modules.Collaboration.Application.Extensions;
 using Modules.Notifications.Application.Extensions;
 using Modules.Projects.Application.Extensions;
 using Modules.Tasks.Application.Extensions;
+using Modules.TimeTracking.Application.Extensions;
 using Modules.UserManagement.Application.Extensions;
 using Modules.Workspaces.Application.Extensions;
 using TaskPlatform.Api.Hubs;
@@ -59,6 +60,7 @@ builder.Services.AddProjectsModule(builder.Configuration);
 builder.Services.AddTasksModule(builder.Configuration);
 builder.Services.AddCollaborationModule(builder.Configuration);
 builder.Services.AddNotificationsModule(builder.Configuration);
+builder.Services.AddTimeTrackingModule(builder.Configuration);
 
 // Real-time notifications
 builder.Services.AddSignalR();

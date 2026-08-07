@@ -9,6 +9,7 @@ using TaskPlatform.Shared.ViewModels.Dashboard;
 using TaskPlatform.Shared.ViewModels.Notification;
 using TaskPlatform.Shared.ViewModels.Project;
 using TaskPlatform.Shared.ViewModels.Task;
+using TaskPlatform.Shared.ViewModels.TimeTracking;
 using TaskPlatform.Shared.ViewModels.User;
 using TaskPlatform.Shared.ViewModels.Workspace;
 
@@ -115,5 +116,13 @@ namespace TaskPlatform.Shared.ApiService
 
         // My Tasks
         Task<ApiResponse<List<TaskViewModel>>> GetMyTasksAsync(string? projectId, string accessToken);
+
+        // Time Tracking
+        Task<ApiResponse<TimeLogViewModel>> StartTimerAsync(string taskId, string accessToken);
+        Task<ApiResponse<TimeLogViewModel>> StopTimerAsync(string? notes, string accessToken);
+        Task<ApiResponse<ActiveTimerViewModel?>> GetActiveTimerAsync(string accessToken);
+        Task<ApiResponse<List<TimeLogViewModel>>> GetTaskTimeLogsAsync(string taskId, string accessToken);
+        Task<ApiResponse<TimeLogViewModel>> UpdateTimeLogNotesAsync(string timeLogId, string? notes, string accessToken);
+        Task<ApiResponse<TimeTrackingReportViewModel>> GetTimeTrackingReportAsync(string workspaceId, DateTime from, DateTime to, string accessToken);
     }
 }

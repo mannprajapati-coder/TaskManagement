@@ -22,4 +22,7 @@ dotnet ef database update --project Modules/Collaboration --startup-project Task
 Write-Host "`n7. Updating Notifications Module..." -ForegroundColor Yellow
 dotnet ef database update --project Modules/Notifications --startup-project TaskPlatform.Api --context NotificationsDbContext
 
+Write-Host "`n8. Updating Time Tracking Module..." -ForegroundColor Yellow
+dotnet ef database update --project Modules/TimeTracking --startup-project TaskPlatform.Api --context TimeTrackingDbContext
+
 Write-Host "`nAll Database Migrations Applied Successfully!" -ForegroundColor Green

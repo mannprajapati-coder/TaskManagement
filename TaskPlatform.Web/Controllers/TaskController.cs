@@ -236,6 +236,7 @@ namespace TaskPlatform.Web.Controllers
             var attachmentsResp = await _apiService.GetTaskAttachmentsAsync(id, token);
             var membersResp = await _apiService.GetProjectMembersAsync(response.Data.ProjectId.ToString(), token);
             var activityResp = await _apiService.GetTaskActivityAsync(id, token);
+            var timeLogsResp = await _apiService.GetTaskTimeLogsAsync(id, token);
 
             var assignees = assigneesResp.Data ?? new List<TaskAssigneeViewModel>();
             var projectMembers = membersResp.Data ?? new List<ProjectMemberViewModel>();
@@ -273,6 +274,7 @@ namespace TaskPlatform.Web.Controllers
             ViewBag.Attachments = attachmentsResp.Data ?? new List<AttachmentViewModel>();
             ViewBag.ProjectMembers = projectMembers;
             ViewBag.ActivityLogs = activityLogs;
+            ViewBag.TimeLogs = timeLogsResp.Data ?? new List<TaskPlatform.Shared.ViewModels.TimeTracking.TimeLogViewModel>();
             ViewBag.CanModify = await ComputeCanModifyAsync(response.Data.ProjectId, assignees, projectMembers, token);
 
             return View(response.Data);

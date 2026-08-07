@@ -26,6 +26,7 @@
     <ProjectReference Include="..\Modules\Tasks\Tasks.csproj" />
     <ProjectReference Include="..\Modules\Collaboration\Collaboration.csproj" />
     <ProjectReference Include="..\Modules\Notifications\Notifications.csproj" />
+    <ProjectReference Include="..\Modules\TimeTracking\TimeTracking.csproj" />
   </ItemGroup>
 
 </Project>

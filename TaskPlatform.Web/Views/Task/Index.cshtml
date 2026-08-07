@@ -118,6 +118,9 @@
                                         <span title="Estimated & Actual Hours">
                                             <i class="bi bi-clock me-1 text-primary"></i>@(task.ActualHours ?? 0)/@(task.EstimatedHours ?? 0)h
                                         </span>
+                                        <button type="button" class="timer-trigger" data-timer-task-id="@task.Id" data-timer-task-title="@task.Title" title="Start timer">
+                                            <i class="bi bi-play-fill" data-timer-icon></i>
+                                        </button>
                                     </div>
 
                                     @if (task.PrimaryAssigneeUserId.HasValue && !string.IsNullOrEmpty(task.PrimaryAssigneeName) && task.PrimaryAssigneeName != "Unassigned")

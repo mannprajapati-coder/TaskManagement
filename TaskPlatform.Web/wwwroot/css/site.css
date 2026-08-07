@@ -538,3 +538,44 @@ body {
     color: var(--text-muted);
     font-size: 0.875rem;
 }
+
+/* Time Tracking */
+.timer-pulse::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    margin-right: 0.35rem;
+    animation: timer-pulse-anim 1.6s ease-in-out infinite;
+}
+
+@keyframes timer-pulse-anim {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.75); }
+}
+
+.timer-trigger {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.timer-trigger:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.timer-trigger.timer-running {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #ffffff;
+}

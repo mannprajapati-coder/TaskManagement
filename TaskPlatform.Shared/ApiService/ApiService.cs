@@ -13,6 +13,7 @@ using TaskPlatform.Shared.ViewModels.Dashboard;
 using TaskPlatform.Shared.ViewModels.Notification;
 using TaskPlatform.Shared.ViewModels.Project;
 using TaskPlatform.Shared.ViewModels.Task;
+using TaskPlatform.Shared.ViewModels.TimeTracking;
 using TaskPlatform.Shared.ViewModels.User;
 using TaskPlatform.Shared.ViewModels.Workspace;
 
@@ -428,6 +429,38 @@ namespace TaskPlatform.Shared.ApiService
         public async Task<ApiResponse<bool>> MarkAllNotificationsAsReadAsync(string accessToken)
         {
             return await PostWithTokenAsync<object, bool>("api/v1/Notifications/MarkAllAsRead", new { }, accessToken);
+        }
+
+        // Time Tracking
+        public async Task<ApiResponse<TimeLogViewModel>> StartTimerAsync(string taskId, string accessToken)
+        {
+            return await PostWithTokenAsync<object, TimeLogViewModel>($"api/v1/TimeTracking/StartTimer/{taskId}", new { }, accessToken);
+        }
+
+        public async Task<ApiResponse<TimeLogViewModel>> StopTimerAsync(string? notes, string accessToken)
+        {
+            return await PostWithTokenAsync<StopTimerRequestViewModel, TimeLogViewModel>("api/v1/TimeTracking/StopTimer", new StopTimerRequestViewModel { Notes = notes }, accessToken);
+        }
+
+        public async Task<ApiResponse<ActiveTimerViewModel?>> GetActiveTimerAsync(string accessToken)
+        {
+            return await GetWithTokenAsync<ActiveTimerViewModel?>("api/v1/TimeTracking/GetActiveTimer", accessToken);
+        }
+
+        public async Task<ApiResponse<List<TimeLogViewModel>>> GetTaskTimeLogsAsync(string taskId, string accessToken)
+        {
+            return await GetWithTokenAsync<List<TimeLogViewModel>>($"api/v1/TimeTracking/TaskLogs/{taskId}", accessToken);
+        }
+
+        public async Task<ApiResponse<TimeLogViewModel>> UpdateTimeLogNotesAsync(string timeLogId, string? notes, string accessToken)
+        {
+            return await PutWithTokenAsync<UpdateTimeLogNotesRequestViewModel, TimeLogViewModel>($"api/v1/TimeTracking/UpdateNotes/{timeLogId}", new UpdateTimeLogNotesRequestViewModel { Notes = notes }, accessToken);
+        }
+
+        public async Task<ApiResponse<TimeTrackingReportViewModel>> GetTimeTrackingReportAsync(string workspaceId, DateTime from, DateTime to, string accessToken)
+        {
+            var url = $"api/v1/TimeTracking/Report?workspaceId={workspaceId}&from={Uri.EscapeDataString(from.ToString("O"))}&to={Uri.EscapeDataString(to.ToString("O"))}";
+            return await GetWithTokenAsync<TimeTrackingReportViewModel>(url, accessToken);
         }
 
         // Helper Methods
