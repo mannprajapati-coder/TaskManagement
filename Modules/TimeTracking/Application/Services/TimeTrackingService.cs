@@ -24,19 +24,23 @@ namespace Modules.TimeTracking.Application.Services
                 throw new DomainException("Task not found.");
             }
 
-            // BR-23-01: starting a new timer auto-stops any timer already running for this user.
-            var active = await _dbContext.TimeLogs.FirstOrDefaultAsync(t => t.UserId == userId && t.EndedAt == null);
+            // BR-23-01: starting a new timer auto-stops any timer already running/paused for this user.
+            var active = await _dbContext.TimeLogs.FirstOrDefaultAsync(t => t.UserId == userId && t.Status != "Stopped");
             if (active != null)
             {
                 StopInternal(active, null);
                 await _dbContext.SaveChangesAsync();
             }
 
+            var now = DateTime.UtcNow;
             var timeLog = new TimeLog
             {
                 TaskId = taskId,
                 UserId = userId,
-                StartedAt = DateTime.UtcNow
+                StartedAt = now,
+                Status = "Running",
+                AccumulatedSeconds = 0,
+                LastResumedAt = now
             };
 
             _dbContext.TimeLogs.Add(timeLog);
@@ -45,9 +49,38 @@ namespace Modules.TimeTracking.Application.Services
             return await ToViewModelAsync(timeLog);
         }
 
+        public async Task<TimeLogViewModel> PauseTimerAsync(Guid userId)
+        {
+            var active = await _dbContext.TimeLogs.FirstOrDefaultAsync(t => t.UserId == userId && t.Status == "Running");
+            if (active == null)
+            {
+                throw new DomainException("No running timer to pause.");
+            }
+
+            PauseInternal(active);
+            await _dbContext.SaveChangesAsync();
+
+            return await ToViewModelAsync(active);
+        }
+
+        public async Task<TimeLogViewModel> ResumeTimerAsync(Guid userId)
+        {
+            var paused = await _dbContext.TimeLogs.FirstOrDefaultAsync(t => t.UserId == userId && t.Status == "Paused");
+            if (paused == null)
+            {
+                throw new DomainException("No paused timer to resume.");
+            }
+
+            paused.Status = "Running";
+            paused.LastResumedAt = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync();
+
+            return await ToViewModelAsync(paused);
+        }
+
         public async Task<TimeLogViewModel> StopTimerAsync(Guid userId, string? notes)
         {
-            var active = await _dbContext.TimeLogs.FirstOrDefaultAsync(t => t.UserId == userId && t.EndedAt == null);
+            var active = await _dbContext.TimeLogs.FirstOrDefaultAsync(t => t.UserId == userId && t.Status != "Stopped");
             if (active == null)
             {
                 throw new DomainException("No active timer to stop.");
@@ -61,7 +94,7 @@ namespace Modules.TimeTracking.Application.Services
 
         public async Task<ActiveTimerViewModel?> GetActiveTimerAsync(Guid userId)
         {
-            var active = await _dbContext.TimeLogs.FirstOrDefaultAsync(t => t.UserId == userId && t.EndedAt == null);
+            var active = await _dbContext.TimeLogs.FirstOrDefaultAsync(t => t.UserId == userId && t.Status != "Stopped");
             if (active == null)
             {
                 return null;
@@ -77,7 +110,9 @@ namespace Modules.TimeTracking.Application.Services
                 Id = active.Id,
                 TaskId = active.TaskId,
                 TaskTitle = taskTitle,
-                StartedAt = active.StartedAt
+                StartedAt = active.StartedAt,
+                Status = active.Status,
+                ElapsedSeconds = ComputeElapsedSeconds(active)
             };
         }
 
@@ -207,14 +242,41 @@ namespace Modules.TimeTracking.Application.Services
             };
         }
 
+        private static void PauseInternal(TimeLog log)
+        {
+            if (log.LastResumedAt.HasValue)
+            {
+                log.AccumulatedSeconds += (int)(DateTime.UtcNow - log.LastResumedAt.Value).TotalSeconds;
+            }
+            log.LastResumedAt = null;
+            log.Status = "Paused";
+        }
+
         private static void StopInternal(TimeLog log, string? notes)
         {
+            if (log.Status == "Running" && log.LastResumedAt.HasValue)
+            {
+                log.AccumulatedSeconds += (int)(DateTime.UtcNow - log.LastResumedAt.Value).TotalSeconds;
+                log.LastResumedAt = null;
+            }
+
+            log.Status = "Stopped";
             log.EndedAt = DateTime.UtcNow;
-            log.DurationMinutes = (int)Math.Round((log.EndedAt.Value - log.StartedAt).TotalMinutes);
+            log.DurationMinutes = (int)Math.Round(log.AccumulatedSeconds / 60.0);
             if (notes != null)
             {
                 log.Notes = notes;
             }
+        }
+
+        private static int ComputeElapsedSeconds(TimeLog log)
+        {
+            var elapsed = log.AccumulatedSeconds;
+            if (log.Status == "Running" && log.LastResumedAt.HasValue)
+            {
+                elapsed += (int)(DateTime.UtcNow - log.LastResumedAt.Value).TotalSeconds;
+            }
+            return elapsed;
         }
 
         private async Task<TimeLogViewModel> ToViewModelAsync(TimeLog log)
@@ -239,7 +301,8 @@ namespace Modules.TimeTracking.Application.Services
                 StartedAt = log.StartedAt,
                 EndedAt = log.EndedAt,
                 DurationMinutes = log.DurationMinutes,
-                Notes = log.Notes
+                Notes = log.Notes,
+                Status = log.Status
             };
         }
     }

@@ -69,6 +69,7 @@
     initSubtaskPanels();
     initSubtaskQuickActions();
     initAttachmentDropzone();
+    initAttachmentMentions();
 
     function initStatusForms() {
         document.addEventListener('submit', function (e) {
@@ -324,6 +325,114 @@
             if (e.dataTransfer.files.length) {
                 input.files = e.dataTransfer.files;
                 fileNameLabel.textContent = e.dataTransfer.files[0].name;
+            }
+        });
+    }
+
+    // Lets a user type "#" in the comment box to pick one of the task's attachments,
+    // inserting a "#[FileName]" token and a hidden MentionedAttachmentIds input so the
+    // mention round-trips through the existing AddComment form post.
+    function initAttachmentMentions() {
+        var textarea = document.getElementById('commentTextArea');
+        var menu = document.getElementById('attachmentMentionMenu');
+        var dataEl = document.getElementById('taskAttachmentsData');
+        var hiddenContainer = document.getElementById('mentionedAttachmentInputs');
+
+        if (!textarea || !menu || !dataEl || !hiddenContainer) {
+            return;
+        }
+
+        var attachments = [];
+        try {
+            attachments = JSON.parse(dataEl.textContent || '[]');
+        } catch (e) {
+            attachments = [];
+        }
+
+        var mentionStart = -1;
+
+        function closeMenu() {
+            menu.classList.add('d-none');
+            menu.innerHTML = '';
+            mentionStart = -1;
+        }
+
+        function selectAttachment(att) {
+            var value = textarea.value;
+            var cursor = textarea.selectionStart;
+            var before = value.slice(0, mentionStart);
+            var after = value.slice(cursor);
+            var inserted = '#[' + att.fileName + '] ';
+
+            textarea.value = before + inserted + after;
+            var newCursor = (before + inserted).length;
+            textarea.focus();
+            textarea.setSelectionRange(newCursor, newCursor);
+
+            if (!hiddenContainer.querySelector('input[value="' + att.id + '"]')) {
+                var hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'MentionedAttachmentIds';
+                hidden.value = att.id;
+                hiddenContainer.appendChild(hidden);
+            }
+
+            closeMenu();
+        }
+
+        function openMenuWithMatches(matches) {
+            menu.innerHTML = '';
+            if (!matches.length) {
+                closeMenu();
+                return;
+            }
+            matches.forEach(function (att) {
+                var item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'dropdown-item rounded-2 small py-2 d-flex align-items-center';
+                item.innerHTML = '<i class="bi bi-paperclip me-2 text-primary"></i>' + att.fileName;
+                item.addEventListener('click', function () {
+                    selectAttachment(att);
+                });
+                menu.appendChild(item);
+            });
+            menu.classList.remove('d-none');
+        }
+
+        textarea.addEventListener('input', function () {
+            var cursor = textarea.selectionStart;
+            var value = textarea.value;
+            var hashIndex = value.lastIndexOf('#', cursor - 1);
+
+            if (hashIndex === -1) {
+                closeMenu();
+                return;
+            }
+
+            var between = value.slice(hashIndex + 1, cursor);
+            if (/\s/.test(between)) {
+                closeMenu();
+                return;
+            }
+
+            mentionStart = hashIndex;
+            var query = between.toLowerCase();
+            var matches = attachments.filter(function (a) {
+                return a.fileName.toLowerCase().indexOf(query) !== -1;
+            }).slice(0, 8);
+
+            openMenuWithMatches(matches);
+        });
+
+        textarea.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeMenu();
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (e.target !== textarea && !menu.contains(e.target)) {
+                closeMenu();
             }
         });
     }

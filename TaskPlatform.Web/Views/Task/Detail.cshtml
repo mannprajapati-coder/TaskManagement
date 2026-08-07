@@ -274,6 +274,10 @@
                                     <label class="form-label extra-small text-muted mb-1">Due Date</label>
                                     <input type="date" name="DueDate" class="form-control" />
                                 </div>
+                                <div class="col-6 col-md-2">
+                                    <label class="form-label extra-small text-muted mb-1">Est. Hours</label>
+                                    <input type="number" name="EstimatedHours" class="form-control" min="0" max="1000" step="0.5" placeholder="Hours" />
+                                </div>
                                 <div class="col-8 col-md-3">
                                     <label class="form-label extra-small text-muted mb-1">Assign To</label>
                                     <select name="PrimaryAssigneeUserId" class="form-select">
@@ -427,16 +431,34 @@
                                                     <span class="extra-small text-muted">@c.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
                                                 </div>
                                                 <p class="text-secondary small mb-0 mt-1">@c.CommentText</p>
+                                                @if (c.MentionedAttachments.Any())
+                                                {
+                                                    <div class="d-flex flex-wrap gap-1 mt-2">
+                                                        @foreach (var m in c.MentionedAttachments)
+                                                        {
+                                                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-2 py-0 preview-attachment-btn" data-url="@Url.Action("PreviewAttachment", "Task", new { id = m.Id, taskId = Model.Id })" data-title="@m.FileName" data-type="">
+                                                                <i class="bi bi-paperclip me-1"></i>@m.FileName
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                }
                                             </div>
                                         </div>
                                     }
                                 </div>
                             }
 
-                            <form asp-action="AddComment" method="post" class="mt-2">
+                            <script type="application/json" id="taskAttachmentsData">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(attachments.Select(a => new { id = a.Id, fileName = a.FileName })))</script>
+
+                            <form asp-action="AddComment" method="post" class="mt-2" id="addCommentForm">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="TaskId" value="@Model.Id" />
-                                <textarea name="CommentText" class="form-control mb-3" rows="3" maxlength="2000" placeholder="Write a comment..." required></textarea>
+                                <div id="mentionedAttachmentInputs"></div>
+                                <div class="position-relative">
+                                    <textarea name="CommentText" id="commentTextArea" class="form-control mb-1" rows="3" maxlength="2000" placeholder="Write a comment... (type # to mention an attachment)" required></textarea>
+                                    <div id="attachmentMentionMenu" class="dropdown-menu shadow-xl border-0 rounded-3 p-1 d-none" style="max-height: 220px; overflow-y: auto;"></div>
+                                </div>
+                                <span class="extra-small text-muted d-block mb-3">Type <strong>#</strong> to mention one of this task's attachments.</span>
                                 <button type="submit" class="btn btn-gradient px-4 font-semibold">Post Comment</button>
                             </form>
                         </div>

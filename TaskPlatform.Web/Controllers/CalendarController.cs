@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskPlatform.Shared.ApiService;
 using TaskPlatform.Shared.ViewModels.Calendar;
+using TaskPlatform.Web.Helpers;
 
 namespace TaskPlatform.Web.Controllers
 {
@@ -36,15 +37,19 @@ namespace TaskPlatform.Web.Controllers
 
             ViewBag.Workspaces = workspacesResp.Data;
 
-            var targetWorkspace = string.IsNullOrEmpty(workspaceId)
-                ? workspacesResp.Data.FirstOrDefault()
-                : workspacesResp.Data.FirstOrDefault(w => w.Id.ToString() == workspaceId) ?? workspacesResp.Data.FirstOrDefault();
+            var targetWorkspace = !string.IsNullOrEmpty(workspaceId)
+                ? workspacesResp.Data.FirstOrDefault(w => w.Id.ToString() == workspaceId)
+                : (WorkspaceCookie.Get(HttpContext) is Guid cookieWorkspaceId
+                    ? workspacesResp.Data.FirstOrDefault(w => w.Id == cookieWorkspaceId)
+                    : null);
+            targetWorkspace ??= workspacesResp.Data.FirstOrDefault();
 
             if (targetWorkspace == null)
             {
                 return RedirectToAction("Create", "Workspace");
             }
 
+            WorkspaceCookie.Set(HttpContext, targetWorkspace.Id);
             ViewBag.CurrentWorkspace = targetWorkspace;
 
             return View();

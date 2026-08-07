@@ -11,6 +11,7 @@ using TaskPlatform.Shared.ApiService;
 using TaskPlatform.Shared.ViewModels.Collaboration;
 using TaskPlatform.Shared.ViewModels.Project;
 using TaskPlatform.Shared.ViewModels.Task;
+using TaskPlatform.Web.Helpers;
 
 namespace TaskPlatform.Web.Controllers
 {
@@ -28,42 +29,92 @@ namespace TaskPlatform.Web.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
+        /// <summary>
+        /// Resolves the globally-selected workspace (navbar switcher cookie) and returns the
+        /// lookup of projects that belong to it — the single scope every workspace-derived
+        /// task view (Kanban, Gantt, Checklist Hub, My Tasks, Subtasks) should filter against.
+        /// </summary>
+        private async Task<(Guid? WorkspaceId, Dictionary<Guid, ProjectViewModel> ProjectLookup)> ResolveWorkspaceProjectsAsync(string token)
+        {
+            var workspaceId = WorkspaceCookie.Get(HttpContext);
+            if (!workspaceId.HasValue)
+            {
+                var wsResp = await _apiService.GetMyWorkspacesAsync(token);
+                workspaceId = wsResp.Data?.FirstOrDefault()?.Id;
+            }
+
+            var projectLookup = new Dictionary<Guid, ProjectViewModel>();
+            if (workspaceId.HasValue)
+            {
+                WorkspaceCookie.Set(HttpContext, workspaceId.Value);
+                var projResp = await _apiService.GetWorkspaceProjectsAsync(workspaceId.Value.ToString(), token);
+                if (projResp.Success && projResp.Data != null)
+                {
+                    foreach (var p in projResp.Data)
+                    {
+                        projectLookup[p.Id] = p;
+                    }
+                }
+            }
+
+            return (workspaceId, projectLookup);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Subtasks(List<Guid>? parentTaskIds)
+        {
+            var token = GetAccessToken();
+            var (workspaceId, projectLookup) = await ResolveWorkspaceProjectsAsync(token);
+
+            var selectedParentIds = parentTaskIds ?? new List<Guid>();
+
+            if (!workspaceId.HasValue || !projectLookup.Any())
+            {
+                ViewBag.ParentTaskOptions = new List<TaskViewModel>();
+                ViewBag.SelectedParentTaskIds = selectedParentIds;
+                ViewBag.ProjectLookup = projectLookup;
+                ViewBag.ParentTaskTitleLookup = new Dictionary<Guid, string>();
+                return View(new List<SubtaskViewModel>());
+            }
+
+            var parentTasks = new List<TaskViewModel>();
+            foreach (var project in projectLookup.Values)
+            {
+                var tasksResp = await _apiService.GetProjectTasksAsync(project.Id.ToString(), null, null, token);
+                if (tasksResp.Success && tasksResp.Data != null)
+                {
+                    parentTasks.AddRange(tasksResp.Data);
+                }
+            }
+
+            var allSubtasks = new List<SubtaskViewModel>();
+            foreach (var parentTask in parentTasks)
+            {
+                var subResp = await _apiService.GetSubtasksAsync(parentTask.Id.ToString(), token);
+                if (subResp.Success && subResp.Data != null)
+                {
+                    allSubtasks.AddRange(subResp.Data);
+                }
+            }
+
+            var subtasks = selectedParentIds.Any()
+                ? allSubtasks.Where(s => selectedParentIds.Contains(s.ParentTaskId)).ToList()
+                : allSubtasks;
+
+            ViewBag.ParentTaskOptions = parentTasks.OrderBy(t => t.Title).ToList();
+            ViewBag.SelectedParentTaskIds = selectedParentIds;
+            ViewBag.ProjectLookup = projectLookup;
+            ViewBag.ParentTaskTitleLookup = parentTasks.ToDictionary(t => t.Id, t => t.Title);
+
+            return View(subtasks.OrderByDescending(s => s.CreatedAt).ToList());
+        }
+
         [HttpGet]
         public async Task<IActionResult> Index(string? projectId = null, string? status = null, string? priority = null)
         {
             var token = GetAccessToken();
 
-            var myTasksResp = await _apiService.GetMyTasksAsync(null, token);
-            var myTasks = myTasksResp.Data ?? new List<TaskViewModel>();
-
-            var projectLookup = new Dictionary<Guid, ProjectViewModel>();
-            foreach (var pid in myTasks.Select(t => t.ProjectId).Distinct())
-            {
-                var projResp = await _apiService.GetProjectByIdAsync(pid.ToString(), token);
-                if (projResp.Success && projResp.Data != null)
-                {
-                    projectLookup[pid] = projResp.Data;
-                }
-            }
-
-            if (!projectLookup.Any())
-            {
-                var wsResp = await _apiService.GetMyWorkspacesAsync(token);
-                if (wsResp.Success && wsResp.Data != null)
-                {
-                    foreach (var ws in wsResp.Data)
-                    {
-                        var wsProjsResp = await _apiService.GetWorkspaceProjectsAsync(ws.Id.ToString(), token);
-                        if (wsProjsResp.Success && wsProjsResp.Data != null)
-                        {
-                            foreach (var p in wsProjsResp.Data)
-                            {
-                                projectLookup[p.Id] = p;
-                            }
-                        }
-                    }
-                }
-            }
+            var (_, projectLookup) = await ResolveWorkspaceProjectsAsync(token);
 
             if (string.IsNullOrEmpty(projectId) && projectLookup.Any())
             {
@@ -101,18 +152,12 @@ namespace TaskPlatform.Web.Controllers
         {
             var token = GetAccessToken();
 
-            var allTasksResp = await _apiService.GetMyTasksAsync(null, token);
-            var allTasks = allTasksResp.Data ?? new List<TaskViewModel>();
+            var (_, projectLookup) = await ResolveWorkspaceProjectsAsync(token);
 
-            var projectLookup = new Dictionary<Guid, ProjectViewModel>();
-            foreach (var pid in allTasks.Select(t => t.ProjectId).Distinct())
-            {
-                var projResp = await _apiService.GetProjectByIdAsync(pid.ToString(), token);
-                if (projResp.Success && projResp.Data != null)
-                {
-                    projectLookup[pid] = projResp.Data;
-                }
-            }
+            var allTasksResp = await _apiService.GetMyTasksAsync(null, token);
+            var allTasks = (allTasksResp.Data ?? new List<TaskViewModel>())
+                .Where(t => projectLookup.ContainsKey(t.ProjectId))
+                .ToList();
 
             var tasks = allTasks;
             if (!string.IsNullOrEmpty(projectId) && Guid.TryParse(projectId, out var projGuid))
@@ -131,21 +176,15 @@ namespace TaskPlatform.Web.Controllers
         {
             var token = GetAccessToken();
 
-            var allTasksResp = await _apiService.GetMyTasksAsync(null, token);
-            var allTasks = allTasksResp.Data ?? new List<TaskViewModel>();
+            var (_, projectLookup) = await ResolveWorkspaceProjectsAsync(token);
 
-            var projectLookup = new Dictionary<Guid, ProjectViewModel>();
-            foreach (var pid in allTasks.Select(t => t.ProjectId).Distinct())
-            {
-                var projResp = await _apiService.GetProjectByIdAsync(pid.ToString(), token);
-                if (projResp.Success && projResp.Data != null)
-                {
-                    projectLookup[pid] = projResp.Data;
-                }
-            }
+            var allTasksResp = await _apiService.GetMyTasksAsync(null, token);
+            var allTasks = (allTasksResp.Data ?? new List<TaskViewModel>())
+                .Where(t => projectLookup.ContainsKey(t.ProjectId))
+                .ToList();
 
             var tasks = allTasks;
-            if (!string.IsNullOrEmpty(projectId) && Guid.TryParse(projectId, out var projGuid))
+            if (!string.IsNullOrEmpty(projectId) && Guid.TryParse(projectId, out var projGuid) && projectLookup.ContainsKey(projGuid))
             {
                 var projTasksResp = await _apiService.GetProjectTasksAsync(projectId, null, null, token);
                 tasks = projTasksResp.Data ?? new List<TaskViewModel>();
@@ -185,37 +224,7 @@ namespace TaskPlatform.Web.Controllers
         {
             var token = GetAccessToken();
 
-            var myTasksResp = await _apiService.GetMyTasksAsync(null, token);
-            var myTasks = myTasksResp.Data ?? new List<TaskViewModel>();
-
-            var projectLookup = new Dictionary<Guid, ProjectViewModel>();
-            foreach (var pid in myTasks.Select(t => t.ProjectId).Distinct())
-            {
-                var projResp = await _apiService.GetProjectByIdAsync(pid.ToString(), token);
-                if (projResp.Success && projResp.Data != null)
-                {
-                    projectLookup[pid] = projResp.Data;
-                }
-            }
-
-            if (!projectLookup.Any())
-            {
-                var wsResp = await _apiService.GetMyWorkspacesAsync(token);
-                if (wsResp.Success && wsResp.Data != null)
-                {
-                    foreach (var ws in wsResp.Data)
-                    {
-                        var wsProjsResp = await _apiService.GetWorkspaceProjectsAsync(ws.Id.ToString(), token);
-                        if (wsProjsResp.Success && wsProjsResp.Data != null)
-                        {
-                            foreach (var p in wsProjsResp.Data)
-                            {
-                                projectLookup[p.Id] = p;
-                            }
-                        }
-                    }
-                }
-            }
+            var (_, projectLookup) = await ResolveWorkspaceProjectsAsync(token);
 
             if (string.IsNullOrEmpty(projectId) && projectLookup.Any())
             {

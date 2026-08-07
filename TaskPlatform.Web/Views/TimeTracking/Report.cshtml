@@ -2,7 +2,6 @@
 @using TaskPlatform.Shared.ViewModels.Workspace
 @{
     ViewData["Title"] = "Time Tracking Report";
-    var workspaces = ViewBag.Workspaces as List<WorkspaceViewModel> ?? new List<WorkspaceViewModel>();
     var currentWorkspace = ViewBag.CurrentWorkspace as WorkspaceViewModel;
     var range = ViewBag.Range as string ?? "today";
     DateTime from = ViewBag.From;
@@ -21,20 +20,8 @@
                 </h3>
                 <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 fw-bold">@currentWorkspace?.Name</span>
             </div>
-            <p class="text-secondary small mb-0">Time tracking across every project and team member in this workspace.</p>
+            <p class="text-secondary small mb-0">Time tracking across every project and team member in this workspace. Use the workspace switcher in the navbar to change workspace.</p>
         </div>
-
-        @if (workspaces.Any())
-        {
-            <form method="get" asp-action="Report" class="d-flex align-items-center">
-                <select name="workspaceId" onchange="this.form.submit()" class="form-select form-select-sm rounded-pill shadow-xs" style="min-width: 200px;">
-                    @foreach (var ws in workspaces)
-                    {
-                        <option value="@ws.Id" selected="@(currentWorkspace != null && currentWorkspace.Id == ws.Id)">@ws.Name</option>
-                    }
-                </select>
-            </form>
-        }
     </div>
 
     <!-- Date Range Filter -->

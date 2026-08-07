@@ -11,6 +11,7 @@ namespace TaskPlatform.Shared.ViewModels.TimeTracking
         public DateTime? EndedAt { get; set; }
         public int? DurationMinutes { get; set; }
         public string? Notes { get; set; }
+        public string Status { get; set; } = "Stopped";
     }
 
     public class ActiveTimerViewModel
@@ -19,6 +20,8 @@ namespace TaskPlatform.Shared.ViewModels.TimeTracking
         public Guid TaskId { get; set; }
         public string TaskTitle { get; set; } = string.Empty;
         public DateTime StartedAt { get; set; }
+        public string Status { get; set; } = "Running"; // Running | Paused
+        public int ElapsedSeconds { get; set; }
     }
 
     public class StopTimerRequestViewModel

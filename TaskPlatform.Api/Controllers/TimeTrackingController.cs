@@ -40,6 +40,26 @@ namespace TaskPlatform.Api.Controllers
             return Ok(ApiResponse<TimeLogViewModel>.Ok(result, "Timer started."));
         }
 
+        [HttpPost("PauseTimer")]
+        public async Task<ActionResult<ApiResponse<TimeLogViewModel>>> PauseTimer()
+        {
+            var userId = GetCurrentUserId();
+            var result = await _timeTrackingService.PauseTimerAsync(userId);
+            await LogActivityAsync(userId, result.TaskId, "TimerPaused", $"Paused the timer on \"{result.TaskTitle}\".");
+            await PushTimerChangedAsync(userId);
+            return Ok(ApiResponse<TimeLogViewModel>.Ok(result, "Timer paused."));
+        }
+
+        [HttpPost("ResumeTimer")]
+        public async Task<ActionResult<ApiResponse<TimeLogViewModel>>> ResumeTimer()
+        {
+            var userId = GetCurrentUserId();
+            var result = await _timeTrackingService.ResumeTimerAsync(userId);
+            await LogActivityAsync(userId, result.TaskId, "TimerResumed", $"Resumed the timer on \"{result.TaskTitle}\".");
+            await PushTimerChangedAsync(userId);
+            return Ok(ApiResponse<TimeLogViewModel>.Ok(result, "Timer resumed."));
+        }
+
         [HttpPost("StopTimer")]
         public async Task<ActionResult<ApiResponse<TimeLogViewModel>>> StopTimer([FromBody] StopTimerRequestViewModel model)
         {

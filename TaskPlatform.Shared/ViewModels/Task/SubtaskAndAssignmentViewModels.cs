@@ -14,6 +14,7 @@ namespace TaskPlatform.Shared.ViewModels.Task
         public string Status { get; set; } = "Todo";
         public string Priority { get; set; } = "Medium";
         public DateTime? DueDate { get; set; }
+        public decimal? EstimatedHours { get; set; }
         public Guid? PrimaryAssigneeUserId { get; set; }
         public DateTime CreatedAt { get; set; }
     }
@@ -32,6 +33,10 @@ namespace TaskPlatform.Shared.ViewModels.Task
 
         public string Priority { get; set; } = "Medium";
         public DateTime? DueDate { get; set; }
+
+        [Range(0, 1000, ErrorMessage = "Estimated hours must be between 0 and 1000.")]
+        public decimal? EstimatedHours { get; set; }
+
         public Guid? PrimaryAssigneeUserId { get; set; }
     }
 

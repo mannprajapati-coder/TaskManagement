@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskPlatform.Shared.ApiService;
 using TaskPlatform.Shared.ViewModels.Project;
+using TaskPlatform.Web.Helpers;
 
 namespace TaskPlatform.Web.Controllers
 {
@@ -18,16 +19,28 @@ namespace TaskPlatform.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(string workspaceId)
+        public async Task<IActionResult> Index(string? workspaceId = null)
         {
-            if (string.IsNullOrEmpty(workspaceId))
+            var token = GetAccessToken();
+
+            Guid? targetWorkspaceId = !string.IsNullOrEmpty(workspaceId) && Guid.TryParse(workspaceId, out var parsedId)
+                ? parsedId
+                : WorkspaceCookie.Get(HttpContext);
+
+            if (!targetWorkspaceId.HasValue)
+            {
+                var workspacesResp = await _apiService.GetMyWorkspacesAsync(token);
+                targetWorkspaceId = workspacesResp.Data?.FirstOrDefault()?.Id;
+            }
+
+            if (!targetWorkspaceId.HasValue)
             {
                 return RedirectToAction("Index", "Workspace");
             }
 
-            ViewBag.WorkspaceId = workspaceId;
-            var token = GetAccessToken();
-            var response = await _apiService.GetWorkspaceProjectsAsync(workspaceId, token);
+            WorkspaceCookie.Set(HttpContext, targetWorkspaceId.Value);
+            ViewBag.WorkspaceId = targetWorkspaceId.Value.ToString();
+            var response = await _apiService.GetWorkspaceProjectsAsync(targetWorkspaceId.Value.ToString(), token);
 
             return View(response.Data ?? new System.Collections.Generic.List<ProjectViewModel>());
         }

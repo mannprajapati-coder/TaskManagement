@@ -42,6 +42,10 @@
         <div class="sidebar-section mb-3">
             <div class="sidebar-section-title px-3 mb-2 text-uppercase extra-small font-bold tracking-wider text-muted">Task & Project Views</div>
             <nav class="nav flex-column gap-1">
+                <a asp-controller="Project" asp-action="Index" class="nav-link sidebar-link @(controller == "Project" ? "active" : "")">
+                    <i class="bi bi-folder2-open sidebar-icon text-info"></i>
+                    <span class="sidebar-text">Projects</span>
+                </a>
                 <a asp-controller="Task" asp-action="Index" asp-route-projectId="@currentProjectId" class="nav-link sidebar-link @(controller == "Task" && action == "Index" ? "active" : "")">
                     <i class="bi bi-kanban-fill sidebar-icon text-warning"></i>
                     <span class="sidebar-text">Kanban Board</span>
@@ -53,6 +57,10 @@
                 <a asp-controller="Task" asp-action="ChecklistHub" asp-route-projectId="@currentProjectId" class="nav-link sidebar-link @(controller == "Task" && action == "ChecklistHub" ? "active" : "")">
                     <i class="bi bi-list-check sidebar-icon text-purple" style="color: #8b5cf6;"></i>
                     <span class="sidebar-text">Checklist Hub</span>
+                </a>
+                <a asp-controller="Task" asp-action="Subtasks" class="nav-link sidebar-link @(controller == "Task" && action == "Subtasks" ? "active" : "")">
+                    <i class="bi bi-diagram-2 sidebar-icon text-purple" style="color: #8b5cf6;"></i>
+                    <span class="sidebar-text">Subtasks</span>
                 </a>
             </nav>
         </div>

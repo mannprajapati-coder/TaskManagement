@@ -9,6 +9,9 @@ namespace Modules.TimeTracking.Domain.Entities
         public DateTime? EndedAt { get; set; }
         public int? DurationMinutes { get; set; }
         public string? Notes { get; set; }
+        public string Status { get; set; } = "Running"; // Running | Paused | Stopped
+        public int AccumulatedSeconds { get; set; }
+        public DateTime? LastResumedAt { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

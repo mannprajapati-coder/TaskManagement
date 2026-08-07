@@ -437,6 +437,16 @@ namespace TaskPlatform.Shared.ApiService
             return await PostWithTokenAsync<object, TimeLogViewModel>($"api/v1/TimeTracking/StartTimer/{taskId}", new { }, accessToken);
         }
 
+        public async Task<ApiResponse<TimeLogViewModel>> PauseTimerAsync(string accessToken)
+        {
+            return await PostWithTokenAsync<object, TimeLogViewModel>("api/v1/TimeTracking/PauseTimer", new { }, accessToken);
+        }
+
+        public async Task<ApiResponse<TimeLogViewModel>> ResumeTimerAsync(string accessToken)
+        {
+            return await PostWithTokenAsync<object, TimeLogViewModel>("api/v1/TimeTracking/ResumeTimer", new { }, accessToken);
+        }
+
         public async Task<ApiResponse<TimeLogViewModel>> StopTimerAsync(string? notes, string accessToken)
         {
             return await PostWithTokenAsync<StopTimerRequestViewModel, TimeLogViewModel>("api/v1/TimeTracking/StopTimer", new StopTimerRequestViewModel { Notes = notes }, accessToken);

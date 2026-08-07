@@ -13,7 +13,14 @@ namespace TaskPlatform.Shared.ViewModels.Collaboration
         public string AuthorName { get; set; } = string.Empty;
         public string CommentText { get; set; } = string.Empty;
         public List<string> MentionedUserIds { get; set; } = new List<string>();
+        public List<AttachmentMentionViewModel> MentionedAttachments { get; set; } = new List<AttachmentMentionViewModel>();
         public DateTime CreatedAt { get; set; }
+    }
+
+    public class AttachmentMentionViewModel
+    {
+        public Guid Id { get; set; }
+        public string FileName { get; set; } = string.Empty;
     }
 
     public class AddCommentRequestViewModel
@@ -26,6 +33,7 @@ namespace TaskPlatform.Shared.ViewModels.Collaboration
         public string CommentText { get; set; } = string.Empty;
 
         public List<string>? MentionedUserIds { get; set; }
+        public List<Guid>? MentionedAttachmentIds { get; set; }
     }
 
     // Attachment ViewModels

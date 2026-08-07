@@ -119,6 +119,8 @@ namespace TaskPlatform.Shared.ApiService
 
         // Time Tracking
         Task<ApiResponse<TimeLogViewModel>> StartTimerAsync(string taskId, string accessToken);
+        Task<ApiResponse<TimeLogViewModel>> PauseTimerAsync(string accessToken);
+        Task<ApiResponse<TimeLogViewModel>> ResumeTimerAsync(string accessToken);
         Task<ApiResponse<TimeLogViewModel>> StopTimerAsync(string? notes, string accessToken);
         Task<ApiResponse<ActiveTimerViewModel?>> GetActiveTimerAsync(string accessToken);
         Task<ApiResponse<List<TimeLogViewModel>>> GetTaskTimeLogsAsync(string taskId, string accessToken);

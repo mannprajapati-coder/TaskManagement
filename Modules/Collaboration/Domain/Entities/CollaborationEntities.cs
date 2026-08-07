@@ -9,6 +9,7 @@ namespace Modules.Collaboration.Domain.Entities
         public Guid UserId { get; set; }
         public string CommentText { get; set; } = string.Empty;
         public string? MentionedUserIdsJson { get; set; }
+        public string? MentionedAttachmentIdsJson { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 

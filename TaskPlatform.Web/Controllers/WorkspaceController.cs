@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using TaskPlatform.Shared.ApiService;
 using TaskPlatform.Shared.ViewModels.Project;
 using TaskPlatform.Shared.ViewModels.Workspace;
+using TaskPlatform.Web.Helpers;
 
 namespace TaskPlatform.Web.Controllers
 {
@@ -245,6 +246,20 @@ namespace TaskPlatform.Web.Controllers
                 ModelState.AddModelError(string.Empty, "Error joining workspace.");
                 return View(model);
             }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SetCurrent(Guid workspaceId, string? returnUrl)
+        {
+            WorkspaceCookie.Set(HttpContext, workspaceId);
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
+            return RedirectToAction("Index", "Dashboard");
         }
 
         private string GetAccessToken() => User.Claims.FirstOrDefault(c => c.Type == "AccessToken")?.Value ?? User.FindFirst("AccessToken")?.Value ?? string.Empty;

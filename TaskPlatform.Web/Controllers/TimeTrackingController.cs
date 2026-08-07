@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskPlatform.Shared.ApiService;
 using TaskPlatform.Shared.ViewModels.TimeTracking;
+using TaskPlatform.Web.Helpers;
+using System.Collections.Generic;
 
 namespace TaskPlatform.Web.Controllers
 {
@@ -29,6 +31,24 @@ namespace TaskPlatform.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PauseTimer()
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.PauseTimerAsync(token);
+            return Json(new { success = response.Success, message = response.Message, data = response.Data });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResumeTimer()
+        {
+            var token = GetAccessToken();
+            var response = await _apiService.ResumeTimerAsync(token);
+            return Json(new { success = response.Success, message = response.Message, data = response.Data });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> StopTimer(string? notes)
         {
             var token = GetAccessToken();
@@ -42,6 +62,34 @@ namespace TaskPlatform.Web.Controllers
             var token = GetAccessToken();
             var response = await _apiService.GetActiveTimerAsync(token);
             return Json(new { success = response.Success, data = response.Data });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetMyTaskOptions()
+        {
+            var token = GetAccessToken();
+
+            var currentWorkspaceId = WorkspaceCookie.Get(HttpContext);
+            var projectIds = new HashSet<Guid>();
+            if (currentWorkspaceId.HasValue)
+            {
+                var projectsResp = await _apiService.GetWorkspaceProjectsAsync(currentWorkspaceId.Value.ToString(), token);
+                if (projectsResp.Success && projectsResp.Data != null)
+                {
+                    foreach (var p in projectsResp.Data)
+                    {
+                        projectIds.Add(p.Id);
+                    }
+                }
+            }
+
+            var tasksResp = await _apiService.GetMyTasksAsync(null, token);
+            var tasks = (tasksResp.Data ?? new List<TaskPlatform.Shared.ViewModels.Task.TaskViewModel>())
+                .Where(t => projectIds.Contains(t.ProjectId))
+                .Select(t => new { id = t.Id, title = t.Title, status = t.Status })
+                .ToList();
+
+            return Json(tasks);
         }
 
         [HttpPost]
@@ -67,15 +115,19 @@ namespace TaskPlatform.Web.Controllers
 
             ViewBag.Workspaces = workspacesResp.Data;
 
-            var currentWorkspace = string.IsNullOrEmpty(workspaceId)
-                ? workspacesResp.Data.FirstOrDefault()
-                : workspacesResp.Data.FirstOrDefault(w => w.Id.ToString() == workspaceId) ?? workspacesResp.Data.FirstOrDefault();
+            var currentWorkspace = !string.IsNullOrEmpty(workspaceId)
+                ? workspacesResp.Data.FirstOrDefault(w => w.Id.ToString() == workspaceId)
+                : (WorkspaceCookie.Get(HttpContext) is Guid cookieWorkspaceId
+                    ? workspacesResp.Data.FirstOrDefault(w => w.Id == cookieWorkspaceId)
+                    : null);
+            currentWorkspace ??= workspacesResp.Data.FirstOrDefault();
 
             if (currentWorkspace == null)
             {
                 return RedirectToAction("Index", "Dashboard");
             }
 
+            WorkspaceCookie.Set(HttpContext, currentWorkspace.Id);
             ViewBag.CurrentWorkspace = currentWorkspace;
             ViewBag.Range = range;
 

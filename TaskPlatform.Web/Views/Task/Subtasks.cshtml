@@ -1,0 +1,130 @@
+@model List<TaskPlatform.Shared.ViewModels.Task.SubtaskViewModel>
+@using TaskPlatform.Shared.ViewModels.Project
+@using TaskPlatform.Shared.ViewModels.Task
+@{
+    ViewData["Title"] = "Subtasks";
+    var parentTaskOptions = ViewBag.ParentTaskOptions as List<TaskViewModel> ?? new List<TaskViewModel>();
+    var selectedParentTaskIds = ViewBag.SelectedParentTaskIds as List<Guid> ?? new List<Guid>();
+    var projectLookup = ViewBag.ProjectLookup as Dictionary<Guid, ProjectViewModel> ?? new Dictionary<Guid, ProjectViewModel>();
+    var parentTaskTitleLookup = ViewBag.ParentTaskTitleLookup as Dictionary<Guid, string> ?? new Dictionary<Guid, string>();
+
+    string ProjectName(Guid projectId) => projectLookup.TryGetValue(projectId, out var p) ? p.Name : "Project Workspace";
+    string ParentTitle(Guid parentTaskId) => parentTaskTitleLookup.TryGetValue(parentTaskId, out var t) ? t : "Untitled Task";
+}
+
+<div class="py-2">
+    <!-- Header Banner -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom gap-3">
+        <div>
+            <h3 class="fw-extrabold text-dark mb-1">
+                <i class="bi bi-diagram-2 text-primary me-2"></i>Subtasks
+            </h3>
+            <p class="text-secondary small mb-0">Every subtask across the current workspace's projects, filterable by parent task.</p>
+        </div>
+
+        @if (parentTaskOptions.Any())
+        {
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-custom rounded-pill px-3 dropdown-toggle" type="button" id="parentTaskFilterBtn" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                    <i class="bi bi-funnel me-1"></i>
+                    Filter by Task
+                    @if (selectedParentTaskIds.Any())
+                    {
+                        <span class="badge bg-primary rounded-pill ms-1">@selectedParentTaskIds.Count</span>
+                    }
+                </button>
+                <div class="dropdown-menu shadow-xl border-0 rounded-4 p-3" style="width: 320px;" aria-labelledby="parentTaskFilterBtn">
+                    <form method="get" asp-action="Subtasks" id="parentTaskFilterForm">
+                        <div class="small text-muted fw-bold text-uppercase tracking-wider mb-2">Parent Tasks (multiselect)</div>
+                        <div style="max-height: 280px; overflow-y: auto;">
+                            @foreach (var pt in parentTaskOptions)
+                            {
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="checkbox" name="parentTaskIds" value="@pt.Id" id="pt-@pt.Id" @(selectedParentTaskIds.Contains(pt.Id) ? "checked" : "") />
+                                    <label class="form-check-label small" for="pt-@pt.Id">@pt.Title</label>
+                                </div>
+                            }
+                        </div>
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="submit" class="btn btn-sm btn-gradient rounded-pill px-3 flex-fill">Apply</button>
+                            <a asp-action="Subtasks" class="btn btn-sm btn-outline-custom rounded-pill px-3">Clear</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5 bg-white my-3">
+            <div class="card-body">
+                <div class="avatar bg-primary-subtle text-primary mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem;">
+                    <i class="bi bi-diagram-2"></i>
+                </div>
+                <h4 class="fw-bold text-dark">No Subtasks Found</h4>
+                <p class="text-secondary small mb-0">
+                    @(selectedParentTaskIds.Any() ? "No subtasks match the selected parent tasks." : "No subtasks have been created in this workspace yet.")
+                </p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light border-bottom">
+                        <tr class="text-secondary small fw-bold">
+                            <th class="ps-4 py-3">SUBTASK</th>
+                            <th class="py-3">PARENT TASK</th>
+                            <th class="py-3">PROJECT</th>
+                            <th class="py-3">DUE DATE</th>
+                            <th class="py-3">EST. HOURS</th>
+                            <th class="py-3">PRIORITY</th>
+                            <th class="py-3">STATUS</th>
+                            <th class="pe-4 text-end py-3">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        @foreach (var subtask in Model)
+                        {
+                            <tr>
+                                <td class="ps-4 py-3 fw-bold text-dark">@subtask.Title</td>
+                                <td>
+                                    <a asp-action="Detail" asp-route-id="@subtask.ParentTaskId" class="badge bg-light text-dark border rounded-pill text-decoration-none">
+                                        <i class="bi bi-diagram-3 me-1 text-primary"></i>@ParentTitle(subtask.ParentTaskId)
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border rounded-pill">
+                                        <i class="bi bi-folder2 me-1 text-primary"></i>@ProjectName(subtask.ProjectId)
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="small text-secondary">
+                                        <i class="bi bi-calendar-event me-1"></i>@(subtask.DueDate?.ToString("MMM dd, yyyy") ?? "Not Set")
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="small text-secondary">@(subtask.EstimatedHours.HasValue ? $"{subtask.EstimatedHours.Value:0.##}h" : "—")</span>
+                                </td>
+                                <td>
+                                    <span class="badge-status priority-@subtask.Priority?.ToLower()">@subtask.Priority</span>
+                                </td>
+                                <td>
+                                    <span class="badge-status badge-@subtask.Status?.ToLower()">@subtask.Status</span>
+                                </td>
+                                <td class="pe-4 text-end">
+                                    <a asp-action="Detail" asp-route-id="@subtask.ParentTaskId" class="btn btn-sm btn-outline-custom px-3">
+                                        View Parent <i class="bi bi-arrow-right ms-1"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

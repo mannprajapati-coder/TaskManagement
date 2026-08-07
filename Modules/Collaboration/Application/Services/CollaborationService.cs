@@ -30,6 +30,14 @@ namespace Modules.Collaboration.Application.Services
 
             var userLookup = await GetUserLookupAsync(comments.Select(c => c.UserId));
 
+            var mentionedAttachmentIds = comments
+                .SelectMany(c => DeserializeGuidList(c.MentionedAttachmentIdsJson))
+                .Distinct()
+                .ToList();
+            var attachmentLookup = await _dbContext.TaskAttachments
+                .Where(a => mentionedAttachmentIds.Contains(a.Id))
+                .ToDictionaryAsync(a => a.Id, a => a.FileName);
+
             return comments.Select(c => new CommentViewModel
             {
                 Id = c.Id,
@@ -40,8 +48,21 @@ namespace Modules.Collaboration.Application.Services
                 MentionedUserIds = string.IsNullOrEmpty(c.MentionedUserIdsJson)
                     ? new List<string>()
                     : JsonSerializer.Deserialize<List<string>>(c.MentionedUserIdsJson) ?? new List<string>(),
+                MentionedAttachments = DeserializeGuidList(c.MentionedAttachmentIdsJson)
+                    .Where(id => attachmentLookup.ContainsKey(id))
+                    .Select(id => new AttachmentMentionViewModel { Id = id, FileName = attachmentLookup[id] })
+                    .ToList(),
                 CreatedAt = c.CreatedAt
             }).ToList();
+        }
+
+        private static List<Guid> DeserializeGuidList(string? json)
+        {
+            if (string.IsNullOrEmpty(json))
+            {
+                return new List<Guid>();
+            }
+            return JsonSerializer.Deserialize<List<Guid>>(json) ?? new List<Guid>();
         }
 
         private async Task<Dictionary<Guid, UserLookup>> GetUserLookupAsync(IEnumerable<Guid> userIds)
@@ -63,6 +84,10 @@ namespace Modules.Collaboration.Application.Services
                 ? JsonSerializer.Serialize(model.MentionedUserIds)
                 : null;
 
+            var attachmentMentionsJson = model.MentionedAttachmentIds != null && model.MentionedAttachmentIds.Any()
+                ? JsonSerializer.Serialize(model.MentionedAttachmentIds)
+                : null;
+
             var comment = new TaskComment
             {
                 Id = Guid.NewGuid(),
@@ -70,6 +95,7 @@ namespace Modules.Collaboration.Application.Services
                 UserId = userId,
                 CommentText = model.CommentText,
                 MentionedUserIdsJson = mentionsJson,
+                MentionedAttachmentIdsJson = attachmentMentionsJson,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -77,6 +103,17 @@ namespace Modules.Collaboration.Application.Services
             await _dbContext.SaveChangesAsync();
 
             var author = await _dbContext.UserLookups.FirstOrDefaultAsync(u => u.Id == userId);
+
+            var mentionedAttachments = new List<AttachmentMentionViewModel>();
+            if (model.MentionedAttachmentIds != null && model.MentionedAttachmentIds.Any())
+            {
+                var attachments = await _dbContext.TaskAttachments
+                    .Where(a => model.MentionedAttachmentIds.Contains(a.Id))
+                    .ToListAsync();
+                mentionedAttachments = attachments
+                    .Select(a => new AttachmentMentionViewModel { Id = a.Id, FileName = a.FileName })
+                    .ToList();
+            }
 
             return new CommentViewModel
             {
@@ -86,6 +123,7 @@ namespace Modules.Collaboration.Application.Services
                 AuthorName = author?.FullName ?? "Unknown User",
                 CommentText = comment.CommentText,
                 MentionedUserIds = model.MentionedUserIds ?? new List<string>(),
+                MentionedAttachments = mentionedAttachments,
                 CreatedAt = comment.CreatedAt
             };
         }

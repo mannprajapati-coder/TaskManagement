@@ -378,8 +378,10 @@ namespace Modules.Tasks.Application.Services
                 ProjectId = t.ProjectId,
                 Title = t.Title,
                 Status = t.Status,
+                Priority = t.Priority,
                 PrimaryAssigneeUserId = t.PrimaryAssigneeUserId,
                 DueDate = t.DueDate,
+                EstimatedHours = t.EstimatedHours,
                 CreatedAt = t.CreatedAt
             }).ToList();
         }
@@ -411,8 +413,9 @@ namespace Modules.Tasks.Application.Services
                 Title = model.Title,
                 Status = "Todo",
                 SortOrder = (maxSortOrder ?? -1) + 1,
-                Priority = "Medium",
+                Priority = string.IsNullOrEmpty(model.Priority) ? "Medium" : model.Priority,
                 DueDate = model.DueDate,
+                EstimatedHours = model.EstimatedHours,
                 PrimaryAssigneeUserId = model.PrimaryAssigneeUserId,
                 CreatorUserId = userId,
                 CreatedAt = DateTime.UtcNow,
@@ -433,8 +436,10 @@ namespace Modules.Tasks.Application.Services
                 ProjectId = subtask.ProjectId,
                 Title = subtask.Title,
                 Status = subtask.Status,
+                Priority = subtask.Priority,
                 PrimaryAssigneeUserId = subtask.PrimaryAssigneeUserId,
                 DueDate = subtask.DueDate,
+                EstimatedHours = subtask.EstimatedHours,
                 CreatedAt = subtask.CreatedAt
             };
 
