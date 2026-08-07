@@ -24,11 +24,12 @@ namespace TaskPlatform.Tests
             var userId = Guid.NewGuid();
             var projectId = Guid.NewGuid();
 
-            var baseTask = await service.CreateTaskAsync(userId, new CreateTaskRequestViewModel
+            var baseTaskResp = await service.CreateTaskAsync(userId, new CreateTaskRequestViewModel
             {
                 ProjectId = projectId,
                 Title = "Weekly Backup"
             });
+            var baseTask = baseTaskResp.Data!;
 
             // Set recurring rule due immediately
             await service.SetRecurringTaskRuleAsync(userId, new SetRecurringTaskRuleRequestViewModel

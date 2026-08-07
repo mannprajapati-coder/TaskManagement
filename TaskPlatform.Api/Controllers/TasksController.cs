@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
+using Modules.Collaboration.Domain.IServices;
 using Modules.Notifications.Domain.IServices;
-using Modules.Projects.Domain.IServices;
 using Modules.Tasks.Domain.IServices;
-using TaskPlatform.Api.Hubs;
 using TaskPlatform.Shared.ViewModels.Common;
 using TaskPlatform.Shared.ViewModels.Notification;
 using TaskPlatform.Shared.ViewModels.Task;
@@ -22,24 +21,33 @@ namespace TaskPlatform.Api.Controllers
     {
         private readonly ITasksService _tasksService;
         private readonly INotificationService _notificationService;
-        private readonly IProjectsService _projectsService;
-        private readonly IHubContext<NotificationsHub> _hubContext;
+        private readonly ICollaborationService _collaborationService;
 
-        public TasksController(ITasksService tasksService, INotificationService notificationService, IProjectsService projectsService, IHubContext<NotificationsHub> hubContext)
+        public TasksController(
+            ITasksService tasksService,
+            INotificationService notificationService,
+            ICollaborationService collaborationService)
         {
             _tasksService = tasksService;
             _notificationService = notificationService;
-            _projectsService = projectsService;
-            _hubContext = hubContext;
+            _collaborationService = collaborationService;
         }
 
+        private Guid GetCurrentUserId()
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return Guid.TryParse(claim, out var userId) ? userId : Guid.Empty;
+        }
+
+        [HttpGet("Project/{projectId}")]
         [HttpGet("GetByProject/{projectId}")]
-        public async Task<ActionResult<ApiResponse<List<TaskViewModel>>>> GetByProject(Guid projectId, [FromQuery] string? status, [FromQuery] string? priority)
+        public async Task<ActionResult<ApiResponse<List<TaskViewModel>>>> GetProjectTasks(Guid projectId, [FromQuery] string? status, [FromQuery] string? priority)
         {
             var result = await _tasksService.GetProjectTasksAsync(projectId, status, priority);
             return Ok(ApiResponse<List<TaskViewModel>>.Ok(result));
         }
 
+        [HttpGet("MyTasks")]
         [HttpGet("GetMyTasks")]
         public async Task<ActionResult<ApiResponse<List<TaskViewModel>>>> GetMyTasks([FromQuery] Guid? projectId)
         {
@@ -51,75 +59,103 @@ namespace TaskPlatform.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse<TaskViewModel>>> GetById(Guid id)
         {
-            var result = await _tasksService.GetTaskByIdAsync(id);
-            return Ok(ApiResponse<TaskViewModel>.Ok(result));
+            var response = await _tasksService.GetTaskByIdAsync(id);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
         }
 
         [HttpPost("Create")]
         public async Task<ActionResult<ApiResponse<TaskViewModel>>> Create([FromBody] CreateTaskRequestViewModel model)
         {
             var userId = GetCurrentUserId();
-            var result = await _tasksService.CreateTaskAsync(userId, model);
+            var response = await _tasksService.CreateTaskAsync(userId, model);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            var result = response.Data!;
             await LogActivityAsync(userId, result.ProjectId, result.Id, "TaskCreated", $"Created task \"{result.Title}\".");
-            return Ok(ApiResponse<TaskViewModel>.Ok(result, "Task created successfully."));
+            return Ok(response);
         }
 
         [HttpPut("Update")]
         public async Task<ActionResult<ApiResponse<TaskViewModel>>> Update([FromBody] UpdateTaskRequestViewModel model)
         {
             var userId = GetCurrentUserId();
-            var before = await _tasksService.GetTaskByIdAsync(model.TaskId);
-            var result = await _tasksService.UpdateTaskAsync(userId, model);
-
-            if (before.DueDate != result.DueDate)
+            var beforeResp = await _tasksService.GetTaskByIdAsync(model.TaskId);
+            var response = await _tasksService.UpdateTaskAsync(userId, model);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            var result = response.Data!;
+            if (beforeResp.Success && beforeResp.Data != null && beforeResp.Data.DueDate != result.DueDate)
             {
                 await NotifyDueDateChangeAsync(result, userId);
             }
 
             await LogActivityAsync(userId, result.ProjectId, result.Id, "TaskUpdated", $"Updated task \"{result.Title}\".");
-            return Ok(ApiResponse<TaskViewModel>.Ok(result, "Task updated successfully."));
+            return Ok(response);
         }
 
         [HttpPut("UpdateStatus")]
         public async Task<ActionResult<ApiResponse<TaskViewModel>>> UpdateStatus([FromBody] UpdateTaskStatusRequestViewModel model)
         {
             var userId = GetCurrentUserId();
-            var before = await _tasksService.GetTaskByIdAsync(model.TaskId);
-            var result = await _tasksService.UpdateTaskStatusAsync(userId, model);
-
-            if (before.Status != result.Status)
+            var beforeResp = await _tasksService.GetTaskByIdAsync(model.TaskId);
+            var response = await _tasksService.UpdateTaskStatusAsync(userId, model);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            var result = response.Data!;
+            if (beforeResp.Success && beforeResp.Data != null && beforeResp.Data.Status != result.Status)
             {
                 await NotifyStatusChangeAsync(result, userId);
-                await LogActivityAsync(userId, result.ProjectId, result.Id, "StatusChanged", $"Status changed from {before.Status} to {result.Status}.");
+                await LogActivityAsync(userId, result.ProjectId, result.Id, "StatusChanged", $"Status changed from {beforeResp.Data.Status} to {result.Status}.");
             }
 
-            return Ok(ApiResponse<TaskViewModel>.Ok(result, "Task status updated."));
+            return Ok(response);
         }
 
         [HttpPut("Reorder")]
         public async Task<ActionResult<ApiResponse<TaskViewModel>>> Reorder([FromBody] ReorderTasksRequestViewModel model)
         {
             var userId = GetCurrentUserId();
-            var before = await _tasksService.GetTaskByIdAsync(model.TaskId);
-            var result = await _tasksService.ReorderTasksAsync(userId, model);
-
-            if (before.Status != result.Status)
+            var beforeResp = await _tasksService.GetTaskByIdAsync(model.TaskId);
+            var response = await _tasksService.ReorderTasksAsync(userId, model);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            var result = response.Data!;
+            if (beforeResp.Success && beforeResp.Data != null && beforeResp.Data.Status != result.Status)
             {
                 await NotifyStatusChangeAsync(result, userId);
-                await LogActivityAsync(userId, result.ProjectId, result.Id, "StatusChanged", $"Status changed from {before.Status} to {result.Status}.");
+                await LogActivityAsync(userId, result.ProjectId, result.Id, "StatusChanged", $"Status changed from {beforeResp.Data.Status} to {result.Status}.");
             }
 
-            return Ok(ApiResponse<TaskViewModel>.Ok(result, "Tasks reordered."));
+            return Ok(response);
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse<bool>>> Delete(Guid id)
         {
             var userId = GetCurrentUserId();
-            var task = await _tasksService.GetTaskByIdAsync(id);
-            var result = await _tasksService.DeleteTaskAsync(userId, id);
-            await LogActivityAsync(userId, task.ProjectId, null, "TaskDeleted", $"Deleted task \"{task.Title}\".");
-            return Ok(ApiResponse<bool>.Ok(result, "Task deleted."));
+            var taskResp = await _tasksService.GetTaskByIdAsync(id);
+            var response = await _tasksService.DeleteTaskAsync(userId, id);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            if (taskResp.Success && taskResp.Data != null)
+            {
+                await LogActivityAsync(userId, taskResp.Data.ProjectId, null, "TaskDeleted", $"Deleted task \"{taskResp.Data.Title}\".");
+            }
+            return Ok(response);
         }
 
         // Subtasks Endpoints
@@ -134,17 +170,26 @@ namespace TaskPlatform.Api.Controllers
         public async Task<ActionResult<ApiResponse<SubtaskViewModel>>> CreateSubtask([FromBody] CreateSubtaskRequestViewModel model)
         {
             var userId = GetCurrentUserId();
-            var result = await _tasksService.CreateSubtaskAsync(userId, model);
+            var response = await _tasksService.CreateSubtaskAsync(userId, model);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            var result = response.Data!;
             await LogActivityAsync(userId, result.ProjectId, result.ParentTaskId, "SubtaskCreated", $"Added subtask \"{result.Title}\".");
-            return Ok(ApiResponse<SubtaskViewModel>.Ok(result, "Subtask created successfully."));
+            return Ok(response);
         }
 
         [HttpDelete("{parentTaskId}/DeleteWithSubtasks")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteWithSubtasks(Guid parentTaskId)
         {
             var userId = GetCurrentUserId();
-            var result = await _tasksService.DeleteTaskWithSubtasksAsync(userId, parentTaskId);
-            return Ok(ApiResponse<bool>.Ok(result, "Parent task and subtasks deleted."));
+            var response = await _tasksService.DeleteTaskWithSubtasksAsync(userId, parentTaskId);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
         }
 
         // Multi-Assignees & Watchers Endpoints
@@ -159,26 +204,40 @@ namespace TaskPlatform.Api.Controllers
         public async Task<ActionResult<ApiResponse<TaskAssigneeViewModel>>> AddAssignee([FromBody] AddTaskAssigneeRequestViewModel model)
         {
             var userId = GetCurrentUserId();
-            var result = await _tasksService.AddTaskAssigneeAsync(userId, model);
+            var response = await _tasksService.AddTaskAssigneeAsync(userId, model);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            var result = response.Data!;
+            var taskResp = await _tasksService.GetTaskByIdAsync(model.TaskId);
+            if (taskResp.Success && taskResp.Data != null)
+            {
+                await NotifyUserAsync(model.UserId, userId,
+                    "You've been assigned a task",
+                    $"\"{taskResp.Data.Title}\" was assigned to you.",
+                    $"/Task/Detail/{taskResp.Data.Id}");
+                await LogActivityAsync(userId, taskResp.Data.ProjectId, taskResp.Data.Id, "AssigneeAdded", $"Assigned {result.FullName} to \"{taskResp.Data.Title}\".");
+            }
 
-            var task = await _tasksService.GetTaskByIdAsync(model.TaskId);
-            await NotifyUserAsync(model.UserId, userId,
-                "You've been assigned a task",
-                $"\"{task.Title}\" was assigned to you.",
-                $"/Task/Detail/{task.Id}");
-            await LogActivityAsync(userId, task.ProjectId, task.Id, "AssigneeAdded", $"Assigned {result.FullName} to \"{task.Title}\".");
-
-            return Ok(ApiResponse<TaskAssigneeViewModel>.Ok(result, "Assignee added to task."));
+            return Ok(response);
         }
 
         [HttpPost("{taskId}/RemoveAssignee/{targetUserId}")]
         public async Task<ActionResult<ApiResponse<bool>>> RemoveAssignee(Guid taskId, Guid targetUserId)
         {
             var userId = GetCurrentUserId();
-            var task = await _tasksService.GetTaskByIdAsync(taskId);
-            var result = await _tasksService.RemoveTaskAssigneeAsync(userId, taskId, targetUserId);
-            await LogActivityAsync(userId, task.ProjectId, task.Id, "AssigneeRemoved", $"Removed an assignee from \"{task.Title}\".");
-            return Ok(ApiResponse<bool>.Ok(result, "Assignee removed."));
+            var taskResp = await _tasksService.GetTaskByIdAsync(taskId);
+            var response = await _tasksService.RemoveTaskAssigneeAsync(userId, taskId, targetUserId);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            if (taskResp.Success && taskResp.Data != null)
+            {
+                await LogActivityAsync(userId, taskResp.Data.ProjectId, taskResp.Data.Id, "AssigneeRemoved", $"Removed an assignee from \"{taskResp.Data.Title}\".");
+            }
+            return Ok(response);
         }
 
         [HttpGet("{taskId}/Watchers")]
@@ -192,8 +251,12 @@ namespace TaskPlatform.Api.Controllers
         public async Task<ActionResult<ApiResponse<bool>>> ToggleWatcher(Guid taskId)
         {
             var userId = GetCurrentUserId();
-            var result = await _tasksService.ToggleTaskWatcherAsync(userId, taskId);
-            return Ok(ApiResponse<bool>.Ok(result, "Watcher status toggled."));
+            var response = await _tasksService.ToggleTaskWatcherAsync(userId, taskId);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
         }
 
         // Checklist Endpoints
@@ -208,26 +271,42 @@ namespace TaskPlatform.Api.Controllers
         public async Task<ActionResult<ApiResponse<ChecklistItemViewModel>>> AddChecklistItem([FromBody] AddChecklistItemRequestViewModel model)
         {
             var userId = GetCurrentUserId();
-            var result = await _tasksService.AddChecklistItemAsync(userId, model);
-            var task = await _tasksService.GetTaskByIdAsync(result.TaskId);
-            await LogActivityAsync(userId, task.ProjectId, task.Id, "ChecklistItemAdded", $"Added checklist item \"{result.Title}\".");
-            return Ok(ApiResponse<ChecklistItemViewModel>.Ok(result, "Checklist item added."));
+            var response = await _tasksService.AddChecklistItemAsync(userId, model);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            var result = response.Data!;
+            var taskResp = await _tasksService.GetTaskByIdAsync(result.TaskId);
+            if (taskResp.Success && taskResp.Data != null)
+            {
+                await LogActivityAsync(userId, taskResp.Data.ProjectId, taskResp.Data.Id, "ChecklistItemAdded", $"Added checklist item \"{result.Title}\".");
+            }
+            return Ok(response);
         }
 
         [HttpPost("ToggleChecklistItem/{itemId}")]
         public async Task<ActionResult<ApiResponse<bool>>> ToggleChecklistItem(Guid itemId)
         {
             var userId = GetCurrentUserId();
-            var result = await _tasksService.ToggleChecklistItemAsync(userId, itemId);
-            return Ok(ApiResponse<bool>.Ok(result, "Checklist item toggled."));
+            var response = await _tasksService.ToggleChecklistItemAsync(userId, itemId);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
         }
 
         [HttpDelete("DeleteChecklistItem/{itemId}")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteChecklistItem(Guid itemId)
         {
             var userId = GetCurrentUserId();
-            var result = await _tasksService.DeleteChecklistItemAsync(userId, itemId);
-            return Ok(ApiResponse<bool>.Ok(result, "Checklist item deleted."));
+            var response = await _tasksService.DeleteChecklistItemAsync(userId, itemId);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
         }
 
         // Recurring Task Endpoints
@@ -235,16 +314,28 @@ namespace TaskPlatform.Api.Controllers
         public async Task<ActionResult<ApiResponse<RecurringTaskRuleViewModel>>> SetRecurringRule([FromBody] SetRecurringTaskRuleRequestViewModel model)
         {
             var userId = GetCurrentUserId();
-            var result = await _tasksService.SetRecurringTaskRuleAsync(userId, model);
-            var task = await _tasksService.GetTaskByIdAsync(result.TaskId);
-            await LogActivityAsync(userId, task.ProjectId, task.Id, "RecurringRuleSet", $"Set recurring rule ({result.RecurrencePattern}) on \"{task.Title}\".");
-            return Ok(ApiResponse<RecurringTaskRuleViewModel>.Ok(result, "Recurring task rule saved."));
+            var response = await _tasksService.SetRecurringTaskRuleAsync(userId, model);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            var result = response.Data!;
+            var taskResp = await _tasksService.GetTaskByIdAsync(result.TaskId);
+            if (taskResp.Success && taskResp.Data != null)
+            {
+                await LogActivityAsync(userId, taskResp.Data.ProjectId, taskResp.Data.Id, "RecurringRuleSet", $"Set recurring rule ({result.RecurrencePattern}) on \"{taskResp.Data.Title}\".");
+            }
+            return Ok(response);
         }
 
         [HttpGet("{taskId}/RecurringRule")]
         public async Task<ActionResult<ApiResponse<RecurringTaskRuleViewModel>>> GetRecurringRule(Guid taskId)
         {
             var result = await _tasksService.GetRecurringTaskRuleAsync(taskId);
+            if (result == null)
+            {
+                return ApiResponse<RecurringTaskRuleViewModel>.Fail("Recurring rule not found.");
+            }
             return Ok(ApiResponse<RecurringTaskRuleViewModel>.Ok(result));
         }
 
@@ -258,55 +349,79 @@ namespace TaskPlatform.Api.Controllers
         private async Task NotifyStatusChangeAsync(TaskViewModel task, Guid currentUserId)
         {
             var recipients = await GetNotificationRecipientsAsync(task);
-            foreach (var recipientId in recipients)
+            foreach (var recipientId in recipients.Where(r => r != currentUserId))
             {
                 await NotifyUserAsync(recipientId, currentUserId,
-                    "Task status updated",
-                    $"\"{task.Title}\" status changed to {task.Status}.",
+                    "Task status changed",
+                    $"\"{task.Title}\" changed status to {task.Status}.",
                     $"/Task/Detail/{task.Id}");
             }
         }
 
         private async Task NotifyDueDateChangeAsync(TaskViewModel task, Guid currentUserId)
         {
-            var recipients = await GetNotificationRecipientsAsync(task);
-            var dueDateText = task.DueDate.HasValue ? task.DueDate.Value.ToString("MMM dd, yyyy") : "no due date";
+            if (!task.DueDate.HasValue) return;
 
-            foreach (var recipientId in recipients)
+            var recipients = await GetNotificationRecipientsAsync(task);
+            var dateStr = task.DueDate.Value.ToString("MMM dd, yyyy");
+            foreach (var recipientId in recipients.Where(r => r != currentUserId))
             {
                 await NotifyUserAsync(recipientId, currentUserId,
                     "Task due date changed",
-                    $"\"{task.Title}\" due date changed to {dueDateText}.",
+                    $"Due date for \"{task.Title}\" was updated to {dateStr}.",
                     $"/Task/Detail/{task.Id}");
             }
         }
 
-        // BR-12-02: Watchers are notified of Status changes, new Comments, and due-date changes only.
-        private async Task<HashSet<Guid>> GetNotificationRecipientsAsync(TaskViewModel task)
+        private async Task<List<Guid>> GetNotificationRecipientsAsync(TaskViewModel task)
         {
             var recipients = new HashSet<Guid>();
+
             if (task.PrimaryAssigneeUserId.HasValue)
             {
                 recipients.Add(task.PrimaryAssigneeUserId.Value);
             }
 
-            var watchers = await _tasksService.GetTaskWatchersAsync(task.Id);
-            foreach (var watcher in watchers)
+            var assignees = await _tasksService.GetTaskAssigneesAsync(task.Id);
+            foreach (var a in assignees)
             {
-                recipients.Add(watcher.UserId);
+                recipients.Add(a.UserId);
             }
 
-            return recipients;
+            var watchers = await _tasksService.GetTaskWatchersAsync(task.Id);
+            foreach (var w in watchers)
+            {
+                recipients.Add(w.UserId);
+            }
+
+            return recipients.ToList();
         }
 
-        private async Task LogActivityAsync(Guid actorUserId, Guid projectId, Guid? taskId, string action, string details)
+        private async Task NotifyUserAsync(Guid targetUserId, Guid currentUserId, string title, string message, string linkUrl)
+        {
+            if (targetUserId == currentUserId) return;
+            try
+            {
+                await _notificationService.SendNotificationAsync(new SendNotificationRequestViewModel
+                {
+                    UserId = targetUserId,
+                    Title = title,
+                    Message = message,
+                    LinkUrl = linkUrl
+                });
+            }
+            catch
+            {
+                // Silently swallow notification dispatch errors
+            }
+        }
+
+        private async Task LogActivityAsync(Guid userId, Guid projectId, Guid? taskId, string action, string details)
         {
             try
             {
-                var project = await _projectsService.GetProjectByIdAsync(projectId, actorUserId);
-                await _notificationService.LogActivityAsync(actorUserId, new CreateActivityLogRequestViewModel
+                await _notificationService.LogActivityAsync(userId, new CreateActivityLogRequestViewModel
                 {
-                    WorkspaceId = project.WorkspaceId,
                     ProjectId = projectId,
                     TaskId = taskId,
                     Action = action,
@@ -315,36 +430,8 @@ namespace TaskPlatform.Api.Controllers
             }
             catch
             {
-                // Activity logging is best-effort and must never fail the primary task operation.
+                // Silently swallow activity log errors
             }
-        }
-
-        private async Task NotifyUserAsync(Guid targetUserId, Guid currentUserId, string title, string message, string linkUrl)
-        {
-            if (targetUserId == currentUserId)
-            {
-                return;
-            }
-
-            var notification = await _notificationService.SendNotificationAsync(new SendNotificationRequestViewModel
-            {
-                UserId = targetUserId,
-                Title = title,
-                Message = message,
-                LinkUrl = linkUrl
-            });
-
-            await _hubContext.Clients.User(targetUserId.ToString()).SendAsync("ReceiveNotification", notification);
-        }
-
-        private Guid GetCurrentUserId()
-        {
-            var subClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
-            if (string.IsNullOrEmpty(subClaim) || !Guid.TryParse(subClaim, out var userId))
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-            return userId;
         }
     }
 }

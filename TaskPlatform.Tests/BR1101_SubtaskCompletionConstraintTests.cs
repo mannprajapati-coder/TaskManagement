@@ -4,7 +4,6 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Modules.Tasks.Application.Services;
 using Modules.Tasks.Infrastructure.Context;
-using TaskPlatform.Shared.Exceptions;
 using TaskPlatform.Shared.ViewModels.Task;
 using Xunit;
 
@@ -13,7 +12,7 @@ namespace TaskPlatform.Tests
     public class BR1101_SubtaskCompletionConstraintTests
     {
         [Fact]
-        public async Task UpdateTaskStatusAsync_ParentCompletedWithIncompleteSubtasks_ShouldThrowDomainException()
+        public async Task UpdateTaskStatusAsync_ParentCompletedWithIncompleteSubtasks_ShouldReturnFailureResult()
         {
             // Arrange
             var options = new DbContextOptionsBuilder<TasksDbContext>()
@@ -24,14 +23,15 @@ namespace TaskPlatform.Tests
             var service = TasksServiceTestFactory.Create(dbContext);
             var userId = Guid.NewGuid();
 
-            var parentTask = await service.CreateTaskAsync(userId, new CreateTaskRequestViewModel
+            var parentTaskResponse = await service.CreateTaskAsync(userId, new CreateTaskRequestViewModel
             {
                 ProjectId = Guid.NewGuid(),
                 Title = "Parent Feature Task"
             });
+            var parentTask = parentTaskResponse.Data!;
 
             // Create an incomplete subtask
-            var subtask = await service.CreateSubtaskAsync(userId, new CreateSubtaskRequestViewModel
+            var subtaskResponse = await service.CreateSubtaskAsync(userId, new CreateSubtaskRequestViewModel
             {
                 ParentTaskId = parentTask.Id,
                 ProjectId = parentTask.ProjectId,
@@ -45,9 +45,9 @@ namespace TaskPlatform.Tests
                 Status = "Completed"
             };
 
-            Func<Task> act = async () => await service.UpdateTaskStatusAsync(userId, updateStatusModel);
-            await act.Should().ThrowAsync<DomainException>()
-                .WithMessage("*Cannot mark parent task as Completed while incomplete subtasks remain*");
+            var result = await service.UpdateTaskStatusAsync(userId, updateStatusModel);
+            result.Success.Should().BeFalse();
+            result.Message.Should().Contain("Cannot mark parent task as Completed while incomplete subtasks remain");
         }
     }
 }

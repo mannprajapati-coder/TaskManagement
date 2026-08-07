@@ -8,7 +8,7 @@ using Modules.Tasks.Domain.Entities;
 using Modules.Tasks.Domain.IServices;
 using Modules.Tasks.Infrastructure.Context;
 using Modules.Workspaces.Domain.IServices;
-using TaskPlatform.Shared.Exceptions;
+using TaskPlatform.Shared.ViewModels.Common;
 using TaskPlatform.Shared.ViewModels.Task;
 
 namespace Modules.Tasks.Application.Services
@@ -26,29 +26,31 @@ namespace Modules.Tasks.Application.Services
             _workspaceService = workspaceService;
         }
 
-        private async Task EnsureCanModifyTaskAsync(Guid userId, TaskEntity task)
+        private async Task<string?> CheckCanModifyTaskAsync(Guid userId, TaskEntity task)
         {
             var isAssignee = await _dbContext.TaskAssignees
                 .AnyAsync(a => a.TaskId == task.Id && a.UserId == userId);
-            if (isAssignee) return;
+            if (isAssignee) return null;
 
             var project = await _projectsService.GetProjectByIdAsync(task.ProjectId, userId);
-
-            var isProjectOwner = (await _projectsService.GetProjectMembersAsync(project.Id, userId))
-                .Any(m => m.UserId == userId && m.Role == "Owner");
-            if (isProjectOwner) return;
-
-            try
+            if (project != null)
             {
-                var workspace = await _workspaceService.GetWorkspaceByIdAsync(project.WorkspaceId, userId);
-                if (workspace.OwnerUserId == userId) return;
-            }
-            catch (PermissionDeniedException)
-            {
-                // Not a workspace member — fall through to denial.
+                var isProjectOwner = (await _projectsService.GetProjectMembersAsync(project.Id, userId))
+                    .Any(m => m.UserId == userId && m.Role == "Owner");
+                if (isProjectOwner) return null;
+
+                try
+                {
+                    var workspace = await _workspaceService.GetWorkspaceByIdAsync(project.WorkspaceId, userId);
+                    if (workspace != null && workspace.OwnerUserId == userId) return null;
+                }
+                catch
+                {
+                    // Not a workspace member
+                }
             }
 
-            throw new PermissionDeniedException("Only an assignee, the project owner, or the workspace owner can modify this task.");
+            return "Only an assignee, the project owner, or the workspace owner can modify this task.";
         }
 
         public async Task<List<TaskViewModel>> GetProjectTasksAsync(Guid projectId, string? status = null, string? priority = null)
@@ -68,22 +70,23 @@ namespace Modules.Tasks.Application.Services
 
             var tasks = await query
                 .OrderBy(t => t.SortOrder)
-                .ThenByDescending(t => t.CreatedAt)
+                .ThenBy(t => t.CreatedAt)
                 .ToListAsync();
 
-            var userLookup = await GetUserLookupAsync(tasks
-                .Where(t => t.PrimaryAssigneeUserId.HasValue)
-                .Select(t => t.PrimaryAssigneeUserId!.Value));
+            var userLookup = await GetUserLookupAsync(tasks.Where(t => t.PrimaryAssigneeUserId.HasValue).Select(t => t.PrimaryAssigneeUserId!.Value));
 
             return tasks.Select(t => MapToViewModel(t, userLookup)).ToList();
         }
 
         public async Task<List<TaskViewModel>> GetMyTasksAsync(Guid userId, Guid? projectId = null)
         {
-            var query = _dbContext.TaskAssignees
+            var assignedTaskIds = await _dbContext.TaskAssignees
                 .Where(a => a.UserId == userId)
-                .Join(_dbContext.Tasks, a => a.TaskId, t => t.Id, (a, t) => t)
-                .Where(t => t.ParentTaskId == null);
+                .Select(a => a.TaskId)
+                .ToListAsync();
+
+            var query = _dbContext.Tasks
+                .Where(t => (t.PrimaryAssigneeUserId == userId || assignedTaskIds.Contains(t.Id)) && t.ParentTaskId == null);
 
             if (projectId.HasValue)
             {
@@ -91,35 +94,39 @@ namespace Modules.Tasks.Application.Services
             }
 
             var tasks = await query
-                .OrderBy(t => t.DueDate == null)
-                .ThenBy(t => t.DueDate)
-                .ThenByDescending(t => t.CreatedAt)
+                .OrderBy(t => t.SortOrder)
+                .ThenBy(t => t.CreatedAt)
                 .ToListAsync();
 
-            var userLookup = await GetUserLookupAsync(tasks
-                .Where(t => t.PrimaryAssigneeUserId.HasValue)
-                .Select(t => t.PrimaryAssigneeUserId!.Value));
+            var userLookup = await GetUserLookupAsync(tasks.Where(t => t.PrimaryAssigneeUserId.HasValue).Select(t => t.PrimaryAssigneeUserId!.Value));
 
             return tasks.Select(t => MapToViewModel(t, userLookup)).ToList();
         }
 
-        public async Task<TaskViewModel> GetTaskByIdAsync(Guid taskId)
+        public async Task<ApiResponse<TaskViewModel>> GetTaskByIdAsync(Guid taskId)
         {
             var task = await _dbContext.Tasks.FindAsync(taskId);
             if (task == null)
             {
-                throw new DomainException("Task not found.");
+                return ApiResponse<TaskViewModel>.Fail("Task not found.");
             }
 
-            return await MapSingleToViewModelAsync(task);
+            var vm = await MapSingleToViewModelAsync(task);
+            return ApiResponse<TaskViewModel>.Ok(vm);
         }
 
-        public async Task<TaskViewModel> CreateTaskAsync(Guid userId, CreateTaskRequestViewModel model)
+        public async Task<ApiResponse<TaskViewModel>> CreateTaskAsync(Guid userId, CreateTaskRequestViewModel model)
         {
-            ValidateTaskDates(model.StartDate, model.DueDate);
+            var dateError = ValidateTaskDates(model.StartDate, model.DueDate);
+            if (dateError != null)
+            {
+                return ApiResponse<TaskViewModel>.Fail(dateError);
+            }
 
-            var sortOrder = await _dbContext.Tasks
-                .CountAsync(t => t.ProjectId == model.ProjectId && t.Status == "Todo" && t.ParentTaskId == null);
+            var maxSortOrder = await _dbContext.Tasks
+                .Where(t => t.ProjectId == model.ProjectId && t.Status == "Todo" && t.ParentTaskId == null)
+                .Select(t => (int?)t.SortOrder)
+                .MaxAsync();
 
             var task = new TaskEntity
             {
@@ -128,15 +135,14 @@ namespace Modules.Tasks.Application.Services
                 Title = model.Title,
                 Description = model.Description,
                 Status = "Todo",
-                SortOrder = sortOrder,
-                Priority = string.IsNullOrEmpty(model.Priority) ? "Medium" : model.Priority,
+                SortOrder = (maxSortOrder ?? -1) + 1,
+                Priority = model.Priority ?? "Medium",
                 StartDate = model.StartDate,
                 DueDate = model.DueDate,
                 EstimatedHours = model.EstimatedHours,
                 ActualHours = 0,
                 PrimaryAssigneeUserId = model.PrimaryAssigneeUserId,
                 CreatorUserId = userId,
-                CompletedAt = null,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -150,34 +156,39 @@ namespace Modules.Tasks.Application.Services
                     Id = Guid.NewGuid(),
                     TaskId = task.Id,
                     UserId = model.PrimaryAssigneeUserId.Value,
-                    IsPrimary = true,
                     AssignedAt = DateTime.UtcNow
                 });
             }
 
             await _dbContext.SaveChangesAsync();
-
-            return await MapSingleToViewModelAsync(task);
+            var vm = await MapSingleToViewModelAsync(task);
+            return ApiResponse<TaskViewModel>.Ok(vm, "Task created successfully.");
         }
 
-        public async Task<TaskViewModel> UpdateTaskAsync(Guid userId, UpdateTaskRequestViewModel model)
+        public async Task<ApiResponse<TaskViewModel>> UpdateTaskAsync(Guid userId, UpdateTaskRequestViewModel model)
         {
             var task = await _dbContext.Tasks.FindAsync(model.TaskId);
             if (task == null)
             {
-                throw new DomainException("Task not found.");
+                return ApiResponse<TaskViewModel>.Fail("Task not found.");
             }
 
-            await EnsureCanModifyTaskAsync(userId, task);
+            var dateError = ValidateTaskDates(model.StartDate, model.DueDate);
+            if (dateError != null)
+            {
+                return ApiResponse<TaskViewModel>.Fail(dateError);
+            }
 
             if (model.ActualHours.HasValue && model.ActualHours.Value < 0)
             {
-                throw new DomainException("Actual hours must be non-negative.");
+                return ApiResponse<TaskViewModel>.Fail("Actual hours must be non-negative.");
             }
 
-            ValidateTaskDates(model.StartDate, model.DueDate);
-
-            var oldPrimary = task.PrimaryAssigneeUserId;
+            var canModifyError = await CheckCanModifyTaskAsync(userId, task);
+            if (canModifyError != null)
+            {
+                return ApiResponse<TaskViewModel>.Fail(canModifyError);
+            }
 
             task.Title = model.Title;
             task.Description = model.Description;
@@ -191,74 +202,82 @@ namespace Modules.Tasks.Application.Services
                 task.ActualHours = model.ActualHours.Value;
             }
 
-            task.PrimaryAssigneeUserId = model.PrimaryAssigneeUserId;
-            task.UpdatedAt = DateTime.UtcNow;
 
-            if (model.PrimaryAssigneeUserId.HasValue && oldPrimary != model.PrimaryAssigneeUserId)
+            if (task.PrimaryAssigneeUserId != model.PrimaryAssigneeUserId)
             {
-                var existingAssignees = await _dbContext.TaskAssignees
-                    .Where(a => a.TaskId == task.Id)
-                    .ToListAsync();
-
-                foreach (var a in existingAssignees)
+                task.PrimaryAssigneeUserId = model.PrimaryAssigneeUserId;
+                if (model.PrimaryAssigneeUserId.HasValue)
                 {
-                    a.IsPrimary = false;
-                }
-
-                var newPrimary = existingAssignees.FirstOrDefault(a => a.UserId == model.PrimaryAssigneeUserId.Value);
-                if (newPrimary != null)
-                {
-                    newPrimary.IsPrimary = true;
-                }
-                else
-                {
-                    _dbContext.TaskAssignees.Add(new TaskAssignee
+                    var exists = await _dbContext.TaskAssignees
+                        .AnyAsync(a => a.TaskId == task.Id && a.UserId == model.PrimaryAssigneeUserId.Value);
+                    if (!exists)
                     {
-                        Id = Guid.NewGuid(),
-                        TaskId = task.Id,
-                        UserId = model.PrimaryAssigneeUserId.Value,
-                        IsPrimary = true,
-                        AssignedAt = DateTime.UtcNow
-                    });
+                        _dbContext.TaskAssignees.Add(new TaskAssignee
+                        {
+                            Id = Guid.NewGuid(),
+                            TaskId = task.Id,
+                            UserId = model.PrimaryAssigneeUserId.Value,
+                            AssignedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+            }
+
+            task.UpdatedAt = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync();
+            var vm = await MapSingleToViewModelAsync(task);
+            return ApiResponse<TaskViewModel>.Ok(vm, "Task updated successfully.");
+        }
+
+        public async Task<ApiResponse<TaskViewModel>> UpdateTaskStatusAsync(Guid userId, UpdateTaskStatusRequestViewModel model)
+        {
+            var task = await _dbContext.Tasks.FindAsync(model.TaskId);
+            if (task == null)
+            {
+                return ApiResponse<TaskViewModel>.Fail("Task not found.");
+            }
+
+            var canModifyError = await CheckCanModifyTaskAsync(userId, task);
+            if (canModifyError != null)
+            {
+                return ApiResponse<TaskViewModel>.Fail(canModifyError);
+            }
+
+            if (!task.Status.Equals(model.Status, StringComparison.OrdinalIgnoreCase))
+            {
+                var statusError = await ApplyStatusChangeAsync(task, model.Status);
+                if (statusError != null)
+                {
+                    return ApiResponse<TaskViewModel>.Fail(statusError);
                 }
             }
 
             await _dbContext.SaveChangesAsync();
-            return await MapSingleToViewModelAsync(task);
+            var vm = await MapSingleToViewModelAsync(task);
+            return ApiResponse<TaskViewModel>.Ok(vm, "Task status updated.");
         }
 
-        public async Task<TaskViewModel> UpdateTaskStatusAsync(Guid userId, UpdateTaskStatusRequestViewModel model)
+        public async Task<ApiResponse<TaskViewModel>> ReorderTasksAsync(Guid userId, ReorderTasksRequestViewModel model)
         {
             var task = await _dbContext.Tasks.FindAsync(model.TaskId);
             if (task == null)
             {
-                throw new DomainException("Task not found.");
+                return ApiResponse<TaskViewModel>.Fail("Task not found.");
             }
 
-            await EnsureCanModifyTaskAsync(userId, task);
+            var canModifyError = await CheckCanModifyTaskAsync(userId, task);
+            if (canModifyError != null)
+            {
+                return ApiResponse<TaskViewModel>.Fail(canModifyError);
+            }
 
             if (!task.Status.Equals(model.Status, StringComparison.OrdinalIgnoreCase))
             {
-                await ApplyStatusChangeAsync(task, model.Status);
-            }
-
-            await _dbContext.SaveChangesAsync();
-            return await MapSingleToViewModelAsync(task);
-        }
-
-        public async Task<TaskViewModel> ReorderTasksAsync(Guid userId, ReorderTasksRequestViewModel model)
-        {
-            var task = await _dbContext.Tasks.FindAsync(model.TaskId);
-            if (task == null)
-            {
-                throw new DomainException("Task not found.");
-            }
-
-            await EnsureCanModifyTaskAsync(userId, task);
-
-            if (!task.Status.Equals(model.Status, StringComparison.OrdinalIgnoreCase))
-            {
-                await ApplyStatusChangeAsync(task, model.Status);
+                var statusError = await ApplyStatusChangeAsync(task, model.Status);
+                if (statusError != null)
+                {
+                    return ApiResponse<TaskViewModel>.Fail(statusError);
+                }
             }
 
             var columnTasks = await _dbContext.Tasks
@@ -275,10 +294,11 @@ namespace Modules.Tasks.Application.Services
             }
 
             await _dbContext.SaveChangesAsync();
-            return await MapSingleToViewModelAsync(task);
+            var vm = await MapSingleToViewModelAsync(task);
+            return ApiResponse<TaskViewModel>.Ok(vm, "Tasks reordered.");
         }
 
-        private async Task ApplyStatusChangeAsync(TaskEntity task, string newStatus)
+        private async Task<string?> ApplyStatusChangeAsync(TaskEntity task, string newStatus)
         {
             if (newStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase))
             {
@@ -289,7 +309,7 @@ namespace Modules.Tasks.Application.Services
 
                 if (incompleteSubtasksExist)
                 {
-                    throw new DomainException("Cannot mark parent task as Completed while incomplete subtasks remain.");
+                    return "Cannot mark parent task as Completed while incomplete subtasks remain.";
                 }
 
                 var hasIncompleteChecklist = await _dbContext.ChecklistItems
@@ -297,7 +317,7 @@ namespace Modules.Tasks.Application.Services
 
                 if (hasIncompleteChecklist)
                 {
-                    throw new DomainException("Cannot mark task as Completed while checklist items remain incomplete.");
+                    return "Cannot mark task as Completed while checklist items remain incomplete.";
                 }
 
                 if (!task.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
@@ -318,68 +338,83 @@ namespace Modules.Tasks.Application.Services
             task.Status = newStatus;
             task.SortOrder = (maxSortOrder ?? -1) + 1;
             task.UpdatedAt = DateTime.UtcNow;
+
+            return null;
         }
 
-        public async Task<bool> DeleteTaskAsync(Guid userId, Guid taskId)
+        public async Task<ApiResponse<bool>> DeleteTaskAsync(Guid userId, Guid taskId)
         {
             var task = await _dbContext.Tasks.FindAsync(taskId);
-            if (task != null)
+            if (task == null)
             {
-                await EnsureCanModifyTaskAsync(userId, task);
-                _dbContext.Tasks.Remove(task);
-                await _dbContext.SaveChangesAsync();
+                return ApiResponse<bool>.Fail("Task not found.");
             }
-            return true;
+
+            var canModifyError = await CheckCanModifyTaskAsync(userId, task);
+            if (canModifyError != null)
+            {
+                return ApiResponse<bool>.Fail(canModifyError);
+            }
+
+            _dbContext.Tasks.Remove(task);
+            await _dbContext.SaveChangesAsync();
+            return ApiResponse<bool>.Ok(true, "Task deleted.");
         }
 
-        // Sprint 05: Subtasks Implementation
         public async Task<List<SubtaskViewModel>> GetSubtasksAsync(Guid parentTaskId)
         {
             var subtasks = await _dbContext.Tasks
                 .Where(t => t.ParentTaskId == parentTaskId)
-                .OrderBy(t => t.CreatedAt)
+                .OrderBy(t => t.SortOrder)
+                .ThenBy(t => t.CreatedAt)
                 .ToListAsync();
 
-            return subtasks.Select(st => new SubtaskViewModel
+            var userLookup = await GetUserLookupAsync(subtasks.Where(t => t.PrimaryAssigneeUserId.HasValue).Select(t => t.PrimaryAssigneeUserId!.Value));
+
+            return subtasks.Select(t => new SubtaskViewModel
             {
-                Id = st.Id,
-                ParentTaskId = st.ParentTaskId!.Value,
-                ProjectId = st.ProjectId,
-                Title = st.Title,
-                Status = st.Status,
-                Priority = st.Priority,
-                DueDate = st.DueDate,
-                PrimaryAssigneeUserId = st.PrimaryAssigneeUserId,
-                CreatedAt = st.CreatedAt
+                Id = t.Id,
+                ParentTaskId = t.ParentTaskId!.Value,
+                ProjectId = t.ProjectId,
+                Title = t.Title,
+                Status = t.Status,
+                PrimaryAssigneeUserId = t.PrimaryAssigneeUserId,
+                DueDate = t.DueDate,
+                CreatedAt = t.CreatedAt
             }).ToList();
         }
 
-        public async Task<SubtaskViewModel> CreateSubtaskAsync(Guid userId, CreateSubtaskRequestViewModel model)
+        public async Task<ApiResponse<SubtaskViewModel>> CreateSubtaskAsync(Guid userId, CreateSubtaskRequestViewModel model)
         {
             var parentTask = await _dbContext.Tasks.FindAsync(model.ParentTaskId);
             if (parentTask == null)
             {
-                throw new DomainException("Parent task not found.");
+                return ApiResponse<SubtaskViewModel>.Fail("Parent task not found.");
             }
 
-            await EnsureCanModifyTaskAsync(userId, parentTask);
+            var canModifyError = await CheckCanModifyTaskAsync(userId, parentTask);
+            if (canModifyError != null)
+            {
+                return ApiResponse<SubtaskViewModel>.Fail(canModifyError);
+            }
+
+            var maxSortOrder = await _dbContext.Tasks
+                .Where(t => t.ParentTaskId == model.ParentTaskId)
+                .Select(t => (int?)t.SortOrder)
+                .MaxAsync();
 
             var subtask = new TaskEntity
             {
                 Id = Guid.NewGuid(),
+                ProjectId = parentTask.ProjectId,
                 ParentTaskId = model.ParentTaskId,
-                ProjectId = model.ProjectId,
                 Title = model.Title,
-                Description = null,
                 Status = "Todo",
-                Priority = string.IsNullOrEmpty(model.Priority) ? "Medium" : model.Priority,
-                StartDate = null,
+                SortOrder = (maxSortOrder ?? -1) + 1,
+                Priority = "Medium",
                 DueDate = model.DueDate,
-                EstimatedHours = null,
-                ActualHours = 0,
                 PrimaryAssigneeUserId = model.PrimaryAssigneeUserId,
                 CreatorUserId = userId,
-                CompletedAt = null,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -387,44 +422,55 @@ namespace Modules.Tasks.Application.Services
             _dbContext.Tasks.Add(subtask);
             await _dbContext.SaveChangesAsync();
 
-            return new SubtaskViewModel
+            var userLookup = subtask.PrimaryAssigneeUserId.HasValue
+                ? await GetUserLookupAsync(new[] { subtask.PrimaryAssigneeUserId.Value })
+                : new Dictionary<Guid, UserLookup>();
+
+            var vm = new SubtaskViewModel
             {
                 Id = subtask.Id,
-                ParentTaskId = subtask.ParentTaskId.Value,
+                ParentTaskId = subtask.ParentTaskId!.Value,
                 ProjectId = subtask.ProjectId,
                 Title = subtask.Title,
                 Status = subtask.Status,
-                Priority = subtask.Priority,
-                DueDate = subtask.DueDate,
                 PrimaryAssigneeUserId = subtask.PrimaryAssigneeUserId,
+                DueDate = subtask.DueDate,
                 CreatedAt = subtask.CreatedAt
             };
+
+            return ApiResponse<SubtaskViewModel>.Ok(vm, "Subtask created successfully.");
         }
 
-        public async Task<bool> DeleteTaskWithSubtasksAsync(Guid userId, Guid parentTaskId)
+        public async Task<ApiResponse<bool>> DeleteTaskWithSubtasksAsync(Guid userId, Guid parentTaskId)
         {
             var parentTask = await _dbContext.Tasks.FindAsync(parentTaskId);
-            if (parentTask != null)
+            if (parentTask == null)
             {
-                await EnsureCanModifyTaskAsync(userId, parentTask);
-
-                var subtasks = await _dbContext.Tasks
-                    .Where(t => t.ParentTaskId == parentTaskId)
-                    .ToListAsync();
-
-                _dbContext.Tasks.RemoveRange(subtasks);
-                _dbContext.Tasks.Remove(parentTask);
-                await _dbContext.SaveChangesAsync();
+                return ApiResponse<bool>.Fail("Parent task not found.");
             }
-            return true;
+
+            var canModifyError = await CheckCanModifyTaskAsync(userId, parentTask);
+            if (canModifyError != null)
+            {
+                return ApiResponse<bool>.Fail(canModifyError);
+            }
+
+            var subtasks = await _dbContext.Tasks
+                .Where(t => t.ParentTaskId == parentTaskId)
+                .ToListAsync();
+
+            _dbContext.Tasks.RemoveRange(subtasks);
+            _dbContext.Tasks.Remove(parentTask);
+            await _dbContext.SaveChangesAsync();
+
+            return ApiResponse<bool>.Ok(true, "Task and subtasks deleted.");
         }
 
-        // Sprint 05: Multi-Assignees & Watchers Implementation
         public async Task<List<TaskAssigneeViewModel>> GetTaskAssigneesAsync(Guid taskId)
         {
             var assignees = await _dbContext.TaskAssignees
                 .Where(a => a.TaskId == taskId)
-                .OrderByDescending(a => a.IsPrimary)
+                .OrderBy(a => a.AssignedAt)
                 .ToListAsync();
 
             var userLookup = await GetUserLookupAsync(assignees.Select(a => a.UserId));
@@ -436,35 +482,30 @@ namespace Modules.Tasks.Application.Services
                 UserId = a.UserId,
                 FullName = userLookup.TryGetValue(a.UserId, out var u) ? u.FullName : "Unknown User",
                 Email = userLookup.TryGetValue(a.UserId, out var u2) ? (u2.Email ?? string.Empty) : string.Empty,
-                IsPrimary = a.IsPrimary,
                 AssignedAt = a.AssignedAt
             }).ToList();
         }
 
-        private async Task<Dictionary<Guid, UserLookup>> GetUserLookupAsync(IEnumerable<Guid> userIds)
-        {
-            var distinctIds = userIds.Distinct().ToList();
-            return await _dbContext.UserLookups
-                .Where(u => distinctIds.Contains(u.Id))
-                .ToDictionaryAsync(u => u.Id);
-        }
-
-        public async Task<TaskAssigneeViewModel> AddTaskAssigneeAsync(Guid userId, AddTaskAssigneeRequestViewModel model)
+        public async Task<ApiResponse<TaskAssigneeViewModel>> AddTaskAssigneeAsync(Guid userId, AddTaskAssigneeRequestViewModel model)
         {
             var task = await _dbContext.Tasks.FindAsync(model.TaskId);
             if (task == null)
             {
-                throw new DomainException("Task not found.");
+                return ApiResponse<TaskAssigneeViewModel>.Fail("Task not found.");
             }
 
-            await EnsureCanModifyTaskAsync(userId, task);
-
-            var existing = await _dbContext.TaskAssignees
-                .FirstOrDefaultAsync(a => a.TaskId == model.TaskId && a.UserId == model.UserId);
-
-            if (existing != null)
+            var canModifyError = await CheckCanModifyTaskAsync(userId, task);
+            if (canModifyError != null)
             {
-                throw new DomainException("User is already assigned to this task.");
+                return ApiResponse<TaskAssigneeViewModel>.Fail(canModifyError);
+            }
+
+            var exists = await _dbContext.TaskAssignees
+                .AnyAsync(a => a.TaskId == model.TaskId && a.UserId == model.UserId);
+
+            if (exists)
+            {
+                return ApiResponse<TaskAssigneeViewModel>.Fail("User is already assigned to this task.");
             }
 
             var assignee = new TaskAssignee
@@ -472,36 +513,40 @@ namespace Modules.Tasks.Application.Services
                 Id = Guid.NewGuid(),
                 TaskId = model.TaskId,
                 UserId = model.UserId,
-                IsPrimary = model.IsPrimary,
                 AssignedAt = DateTime.UtcNow
             };
 
             _dbContext.TaskAssignees.Add(assignee);
             await _dbContext.SaveChangesAsync();
 
-            var assignedUser = await _dbContext.UserLookups.FirstOrDefaultAsync(u => u.Id == assignee.UserId);
+            var userLookup = await GetUserLookupAsync(new[] { model.UserId });
 
-            return new TaskAssigneeViewModel
+            var vm = new TaskAssigneeViewModel
             {
                 Id = assignee.Id,
                 TaskId = assignee.TaskId,
                 UserId = assignee.UserId,
-                FullName = assignedUser?.FullName ?? "Unknown User",
-                Email = assignedUser?.Email ?? string.Empty,
-                IsPrimary = assignee.IsPrimary,
+                FullName = userLookup.TryGetValue(assignee.UserId, out var u) ? u.FullName : "Unknown User",
+                Email = userLookup.TryGetValue(assignee.UserId, out var u2) ? (u2.Email ?? string.Empty) : string.Empty,
                 AssignedAt = assignee.AssignedAt
             };
+
+            return ApiResponse<TaskAssigneeViewModel>.Ok(vm, "Assignee added successfully.");
         }
 
-        public async Task<bool> RemoveTaskAssigneeAsync(Guid userId, Guid taskId, Guid targetUserId)
+        public async Task<ApiResponse<bool>> RemoveTaskAssigneeAsync(Guid userId, Guid taskId, Guid targetUserId)
         {
             var task = await _dbContext.Tasks.FindAsync(taskId);
             if (task == null)
             {
-                throw new DomainException("Task not found.");
+                return ApiResponse<bool>.Fail("Task not found.");
             }
 
-            await EnsureCanModifyTaskAsync(userId, task);
+            var canModifyError = await CheckCanModifyTaskAsync(userId, task);
+            if (canModifyError != null)
+            {
+                return ApiResponse<bool>.Fail(canModifyError);
+            }
 
             var assignee = await _dbContext.TaskAssignees
                 .FirstOrDefaultAsync(a => a.TaskId == taskId && a.UserId == targetUserId);
@@ -512,7 +557,7 @@ namespace Modules.Tasks.Application.Services
                 await _dbContext.SaveChangesAsync();
             }
 
-            return true;
+            return ApiResponse<bool>.Ok(true, "Assignee removed successfully.");
         }
 
         public async Task<List<TaskWatcherViewModel>> GetTaskWatchersAsync(Guid taskId)
@@ -535,8 +580,14 @@ namespace Modules.Tasks.Application.Services
             }).ToList();
         }
 
-        public async Task<bool> ToggleTaskWatcherAsync(Guid userId, Guid taskId)
+        public async Task<ApiResponse<bool>> ToggleTaskWatcherAsync(Guid userId, Guid taskId)
         {
+            var task = await _dbContext.Tasks.FindAsync(taskId);
+            if (task == null)
+            {
+                return ApiResponse<bool>.Fail("Task not found.");
+            }
+
             var existing = await _dbContext.TaskWatchers
                 .FirstOrDefaultAsync(w => w.TaskId == taskId && w.UserId == userId);
 
@@ -556,10 +607,9 @@ namespace Modules.Tasks.Application.Services
             }
 
             await _dbContext.SaveChangesAsync();
-            return true;
+            return ApiResponse<bool>.Ok(true);
         }
 
-        // Sprint 06: Checklists & Recurring Tasks Implementation
         public async Task<List<ChecklistItemViewModel>> GetChecklistItemsAsync(Guid taskId)
         {
             var items = await _dbContext.ChecklistItems
@@ -579,12 +629,19 @@ namespace Modules.Tasks.Application.Services
             }).ToList();
         }
 
-        public async Task<ChecklistItemViewModel> AddChecklistItemAsync(Guid userId, AddChecklistItemRequestViewModel model)
+        public async Task<ApiResponse<ChecklistItemViewModel>> AddChecklistItemAsync(Guid userId, AddChecklistItemRequestViewModel model)
         {
             var task = await _dbContext.Tasks.FindAsync(model.TaskId);
-            if (task == null) throw new DomainException("Task not found.");
+            if (task == null)
+            {
+                return ApiResponse<ChecklistItemViewModel>.Fail("Task not found.");
+            }
 
-            await EnsureCanModifyTaskAsync(userId, task);
+            var canModifyError = await CheckCanModifyTaskAsync(userId, task);
+            if (canModifyError != null)
+            {
+                return ApiResponse<ChecklistItemViewModel>.Fail(canModifyError);
+            }
 
             var count = await _dbContext.ChecklistItems.CountAsync(c => c.TaskId == model.TaskId);
 
@@ -601,7 +658,7 @@ namespace Modules.Tasks.Application.Services
             _dbContext.ChecklistItems.Add(item);
             await _dbContext.SaveChangesAsync();
 
-            return new ChecklistItemViewModel
+            return ApiResponse<ChecklistItemViewModel>.Ok(new ChecklistItemViewModel
             {
                 Id = item.Id,
                 TaskId = item.TaskId,
@@ -609,26 +666,33 @@ namespace Modules.Tasks.Application.Services
                 IsCompleted = item.IsCompleted,
                 SortOrder = item.SortOrder,
                 CreatedAt = item.CreatedAt
-            };
+            }, "Checklist item added.");
         }
 
-        public async Task<bool> ToggleChecklistItemAsync(Guid userId, Guid itemId)
+        public async Task<ApiResponse<bool>> ToggleChecklistItemAsync(Guid userId, Guid itemId)
         {
             var item = await _dbContext.ChecklistItems.FindAsync(itemId);
-            if (item == null) throw new DomainException("Checklist item not found.");
+            if (item == null)
+            {
+                return ApiResponse<bool>.Fail("Checklist item not found.");
+            }
 
             var task = await _dbContext.Tasks.FindAsync(item.TaskId);
             if (task != null)
             {
-                await EnsureCanModifyTaskAsync(userId, task);
+                var canModifyError = await CheckCanModifyTaskAsync(userId, task);
+                if (canModifyError != null)
+                {
+                    return ApiResponse<bool>.Fail(canModifyError);
+                }
             }
 
             item.IsCompleted = !item.IsCompleted;
             await _dbContext.SaveChangesAsync();
-            return true;
+            return ApiResponse<bool>.Ok(true);
         }
 
-        public async Task<bool> DeleteChecklistItemAsync(Guid userId, Guid itemId)
+        public async Task<ApiResponse<bool>> DeleteChecklistItemAsync(Guid userId, Guid itemId)
         {
             var item = await _dbContext.ChecklistItems.FindAsync(itemId);
             if (item != null)
@@ -636,19 +700,26 @@ namespace Modules.Tasks.Application.Services
                 var task = await _dbContext.Tasks.FindAsync(item.TaskId);
                 if (task != null)
                 {
-                    await EnsureCanModifyTaskAsync(userId, task);
+                    var canModifyError = await CheckCanModifyTaskAsync(userId, task);
+                    if (canModifyError != null)
+                    {
+                        return ApiResponse<bool>.Fail(canModifyError);
+                    }
                 }
 
                 _dbContext.ChecklistItems.Remove(item);
                 await _dbContext.SaveChangesAsync();
             }
-            return true;
+            return ApiResponse<bool>.Ok(true);
         }
 
-        public async Task<RecurringTaskRuleViewModel> SetRecurringTaskRuleAsync(Guid userId, SetRecurringTaskRuleRequestViewModel model)
+        public async Task<ApiResponse<RecurringTaskRuleViewModel>> SetRecurringTaskRuleAsync(Guid userId, SetRecurringTaskRuleRequestViewModel model)
         {
             var task = await _dbContext.Tasks.FindAsync(model.TaskId);
-            if (task == null) throw new DomainException("Task not found.");
+            if (task == null)
+            {
+                return ApiResponse<RecurringTaskRuleViewModel>.Fail("Task not found.");
+            }
 
             var existingRule = await _dbContext.RecurringTaskRules
                 .FirstOrDefaultAsync(r => r.TaskId == model.TaskId);
@@ -679,7 +750,7 @@ namespace Modules.Tasks.Application.Services
 
             await _dbContext.SaveChangesAsync();
 
-            return new RecurringTaskRuleViewModel
+            return ApiResponse<RecurringTaskRuleViewModel>.Ok(new RecurringTaskRuleViewModel
             {
                 Id = existingRule.Id,
                 TaskId = existingRule.TaskId,
@@ -688,7 +759,7 @@ namespace Modules.Tasks.Application.Services
                 DaysOfWeek = existingRule.DaysOfWeek,
                 NextRunDate = existingRule.NextRunDate,
                 IsActive = existingRule.IsActive
-            };
+            }, "Recurring rule set successfully.");
         }
 
         public async Task<RecurringTaskRuleViewModel?> GetRecurringTaskRuleAsync(Guid taskId)
@@ -743,7 +814,6 @@ namespace Modules.Tasks.Application.Services
 
                 _dbContext.Tasks.Add(newTask);
 
-                // Compute next run date
                 rule.NextRunDate = rule.RecurrencePattern switch
                 {
                     "Weekly" => rule.NextRunDate.AddDays(7 * rule.Interval),
@@ -758,12 +828,23 @@ namespace Modules.Tasks.Application.Services
             return createdCount;
         }
 
-        private static void ValidateTaskDates(DateTime? startDate, DateTime? dueDate)
+        private static string? ValidateTaskDates(DateTime? startDate, DateTime? dueDate)
         {
             if (startDate.HasValue && dueDate.HasValue && dueDate.Value < startDate.Value)
             {
-                throw new DomainException("Task Due Date must be on or after Start Date.");
+                return "Task Due Date must be on or after Start Date.";
             }
+            return null;
+        }
+
+        private async Task<IReadOnlyDictionary<Guid, UserLookup>> GetUserLookupAsync(IEnumerable<Guid> userIds)
+        {
+            var ids = userIds.Distinct().ToList();
+            if (!ids.Any()) return new Dictionary<Guid, UserLookup>();
+
+            return await _dbContext.UserLookups
+                .Where(u => ids.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id);
         }
 
         private async Task<TaskViewModel> MapSingleToViewModelAsync(TaskEntity t)

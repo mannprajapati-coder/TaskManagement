@@ -4,7 +4,6 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Modules.Tasks.Application.Services;
 using Modules.Tasks.Infrastructure.Context;
-using TaskPlatform.Shared.Exceptions;
 using TaskPlatform.Shared.ViewModels.Task;
 using Xunit;
 
@@ -30,7 +29,8 @@ namespace TaskPlatform.Tests
                 Title = "Test Completion Task"
             };
 
-            var createdTask = await service.CreateTaskAsync(userId, createModel);
+            var createdResp = await service.CreateTaskAsync(userId, createModel);
+            var createdTask = createdResp.Data!;
             createdTask.CompletedAt.Should().BeNull();
 
             // Act - Move status to Completed
@@ -39,7 +39,8 @@ namespace TaskPlatform.Tests
                 TaskId = createdTask.Id,
                 Status = "Completed"
             };
-            var updatedTask = await service.UpdateTaskStatusAsync(userId, updateStatusModel);
+            var updatedResp = await service.UpdateTaskStatusAsync(userId, updateStatusModel);
+            var updatedTask = updatedResp.Data!;
 
             // Assert
             updatedTask.Status.Should().Be("Completed");
@@ -52,7 +53,8 @@ namespace TaskPlatform.Tests
                 TaskId = createdTask.Id,
                 Status = "InProgress"
             };
-            var revertedTask = await service.UpdateTaskStatusAsync(userId, revertModel);
+            var revertedResp = await service.UpdateTaskStatusAsync(userId, revertModel);
+            var revertedTask = revertedResp.Data!;
 
             // Assert 2
             revertedTask.Status.Should().Be("InProgress");
@@ -60,7 +62,7 @@ namespace TaskPlatform.Tests
         }
 
         [Fact]
-        public async Task UpdateTaskAsync_NegativeActualHours_ShouldThrowDomainException()
+        public async Task UpdateTaskAsync_NegativeActualHours_ShouldReturnFailureResult()
         {
             // Arrange
             var options = new DbContextOptionsBuilder<TasksDbContext>()
@@ -76,7 +78,8 @@ namespace TaskPlatform.Tests
                 ProjectId = Guid.NewGuid(),
                 Title = "Task For Hours Test"
             };
-            var createdTask = await service.CreateTaskAsync(userId, createModel);
+            var createdResp = await service.CreateTaskAsync(userId, createModel);
+            var createdTask = createdResp.Data!;
 
             var updateModel = new UpdateTaskRequestViewModel
             {
@@ -86,13 +89,13 @@ namespace TaskPlatform.Tests
             };
 
             // Act & Assert
-            Func<Task> act = async () => await service.UpdateTaskAsync(userId, updateModel);
-            await act.Should().ThrowAsync<DomainException>()
-                .WithMessage("*Actual hours must be non-negative*");
+            var result = await service.UpdateTaskAsync(userId, updateModel);
+            result.Success.Should().BeFalse();
+            result.Message.Should().Contain("Actual hours must be non-negative");
         }
 
         [Fact]
-        public async Task CreateTaskAsync_DueDateBeforeStartDate_ShouldThrowDomainException()
+        public async Task CreateTaskAsync_DueDateBeforeStartDate_ShouldReturnFailureResult()
         {
             // Arrange
             var options = new DbContextOptionsBuilder<TasksDbContext>()
@@ -112,9 +115,9 @@ namespace TaskPlatform.Tests
             };
 
             // Act & Assert
-            Func<Task> act = async () => await service.CreateTaskAsync(userId, createModel);
-            await act.Should().ThrowAsync<DomainException>()
-                .WithMessage("*Due Date must be on or after Start Date*");
+            var result = await service.CreateTaskAsync(userId, createModel);
+            result.Success.Should().BeFalse();
+            result.Message.Should().Contain("Due Date must be on or after Start Date");
         }
     }
 }

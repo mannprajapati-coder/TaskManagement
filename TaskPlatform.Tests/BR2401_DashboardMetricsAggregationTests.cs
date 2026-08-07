@@ -30,9 +30,6 @@ namespace TaskPlatform.Tests
             var workspaceId = Guid.NewGuid();
             var projectId = Guid.NewGuid();
 
-            // BR-24-01: DashboardService now scopes tasks to the workspace via ProjectLookups
-            // (the read-only projection of the Projects table), so the test must seed the
-            // project/workspace relationship it depends on.
             dbContext.ProjectLookups.Add(new ProjectLookup { Id = projectId, WorkspaceId = workspaceId });
             await dbContext.SaveChangesAsync();
 
@@ -43,13 +40,14 @@ namespace TaskPlatform.Tests
 
             var dashboardService = new DashboardService(dbContext, notificationService.Object);
 
-            var task1 = await tasksService.CreateTaskAsync(userId, new CreateTaskRequestViewModel
+            var task1Resp = await tasksService.CreateTaskAsync(userId, new CreateTaskRequestViewModel
             {
                 ProjectId = projectId,
                 Title = "Task One"
             });
+            var task1 = task1Resp.Data!;
 
-            var task2 = await tasksService.CreateTaskAsync(userId, new CreateTaskRequestViewModel
+            var task2Resp = await tasksService.CreateTaskAsync(userId, new CreateTaskRequestViewModel
             {
                 ProjectId = projectId,
                 Title = "Task Two"

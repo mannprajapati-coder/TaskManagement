@@ -5,10 +5,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TaskPlatform.Shared.ApiService;
 
+using TaskPlatform.Web.Filters;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MVC services
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<DomainExceptionFilter>();
+});
 
 // Allow antiforgery validation via header for AJAX/JSON requests (drag-and-drop board)
 builder.Services.AddAntiforgery(options =>

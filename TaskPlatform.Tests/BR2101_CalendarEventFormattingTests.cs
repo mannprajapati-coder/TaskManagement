@@ -27,18 +27,17 @@ namespace TaskPlatform.Tests
             var workspaceId = Guid.NewGuid();
             var projectId = Guid.NewGuid();
 
-            // CalendarService scopes tasks to the workspace via ProjectLookups (the read-only
-            // projection of the Projects table) — seed that relationship for the test's project.
             dbContext.ProjectLookups.Add(new ProjectLookup { Id = projectId, WorkspaceId = workspaceId });
             await dbContext.SaveChangesAsync();
 
-            var task = await tasksService.CreateTaskAsync(userId, new CreateTaskRequestViewModel
+            var taskResp = await tasksService.CreateTaskAsync(userId, new CreateTaskRequestViewModel
             {
                 ProjectId = projectId,
                 Title = "Critical System Release",
                 Priority = "Urgent",
                 DueDate = DateTime.UtcNow.AddDays(2)
             });
+            var task = taskResp.Data!;
 
             // Act
             var events = await calendarService.GetCalendarEventsAsync(workspaceId, DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(10));

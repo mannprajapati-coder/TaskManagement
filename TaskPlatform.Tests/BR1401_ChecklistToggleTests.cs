@@ -4,7 +4,6 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Modules.Tasks.Application.Services;
 using Modules.Tasks.Infrastructure.Context;
-using TaskPlatform.Shared.Exceptions;
 using TaskPlatform.Shared.ViewModels.Task;
 using Xunit;
 
@@ -24,18 +23,20 @@ namespace TaskPlatform.Tests
             var service = TasksServiceTestFactory.Create(dbContext);
             var userId = Guid.NewGuid();
 
-            var task = await service.CreateTaskAsync(userId, new CreateTaskRequestViewModel
+            var taskResp = await service.CreateTaskAsync(userId, new CreateTaskRequestViewModel
             {
                 ProjectId = Guid.NewGuid(),
                 Title = "Task with Checklist"
             });
+            var task = taskResp.Data!;
 
             // Act 1: Add Checklist Item
-            var item = await service.AddChecklistItemAsync(userId, new AddChecklistItemRequestViewModel
+            var itemResp = await service.AddChecklistItemAsync(userId, new AddChecklistItemRequestViewModel
             {
                 TaskId = task.Id,
                 Title = "Verify Database Schema"
             });
+            var item = itemResp.Data!;
 
             // Assert 1
             item.Should().NotBeNull();
@@ -45,13 +46,13 @@ namespace TaskPlatform.Tests
             var toggleResult = await service.ToggleChecklistItemAsync(userId, item.Id);
 
             // Assert 2
-            toggleResult.Should().BeTrue();
+            toggleResult.Success.Should().BeTrue();
             var items = await service.GetChecklistItemsAsync(task.Id);
             items.Should().ContainSingle(i => i.Id == item.Id && i.IsCompleted == true);
         }
 
         [Fact]
-        public async Task UpdateTaskStatusAsync_CompletedWithIncompleteChecklistItem_ShouldThrowDomainException()
+        public async Task UpdateTaskStatusAsync_CompletedWithIncompleteChecklistItem_ShouldReturnFailureResult()
         {
             // Arrange
             var options = new DbContextOptionsBuilder<TasksDbContext>()
@@ -62,11 +63,12 @@ namespace TaskPlatform.Tests
             var service = TasksServiceTestFactory.Create(dbContext);
             var userId = Guid.NewGuid();
 
-            var task = await service.CreateTaskAsync(userId, new CreateTaskRequestViewModel
+            var taskResp = await service.CreateTaskAsync(userId, new CreateTaskRequestViewModel
             {
                 ProjectId = Guid.NewGuid(),
                 Title = "Task with Checklist"
             });
+            var task = taskResp.Data!;
 
             await service.AddChecklistItemAsync(userId, new AddChecklistItemRequestViewModel
             {
@@ -75,14 +77,14 @@ namespace TaskPlatform.Tests
             });
 
             // Act & Assert
-            Func<Task> act = async () => await service.UpdateTaskStatusAsync(userId, new UpdateTaskStatusRequestViewModel
+            var result = await service.UpdateTaskStatusAsync(userId, new UpdateTaskStatusRequestViewModel
             {
                 TaskId = task.Id,
                 Status = "Completed"
             });
 
-            await act.Should().ThrowAsync<DomainException>()
-                .WithMessage("*checklist items remain incomplete*");
+            result.Success.Should().BeFalse();
+            result.Message.Should().Contain("checklist items remain incomplete");
         }
 
         [Fact]
@@ -97,28 +99,31 @@ namespace TaskPlatform.Tests
             var service = TasksServiceTestFactory.Create(dbContext);
             var userId = Guid.NewGuid();
 
-            var task = await service.CreateTaskAsync(userId, new CreateTaskRequestViewModel
+            var taskResp = await service.CreateTaskAsync(userId, new CreateTaskRequestViewModel
             {
                 ProjectId = Guid.NewGuid(),
                 Title = "Task with Checklist"
             });
+            var task = taskResp.Data!;
 
-            var item = await service.AddChecklistItemAsync(userId, new AddChecklistItemRequestViewModel
+            var itemResp = await service.AddChecklistItemAsync(userId, new AddChecklistItemRequestViewModel
             {
                 TaskId = task.Id,
                 Title = "Item to complete"
             });
+            var item = itemResp.Data!;
             await service.ToggleChecklistItemAsync(userId, item.Id);
 
             // Act
-            var updated = await service.UpdateTaskStatusAsync(userId, new UpdateTaskStatusRequestViewModel
+            var updatedResp = await service.UpdateTaskStatusAsync(userId, new UpdateTaskStatusRequestViewModel
             {
                 TaskId = task.Id,
                 Status = "Completed"
             });
 
             // Assert
-            updated.Status.Should().Be("Completed");
+            updatedResp.Success.Should().BeTrue();
+            updatedResp.Data!.Status.Should().Be("Completed");
         }
     }
 }

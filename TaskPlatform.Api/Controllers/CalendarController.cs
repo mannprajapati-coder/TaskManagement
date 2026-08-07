@@ -36,8 +36,12 @@ namespace TaskPlatform.Api.Controllers
         public async Task<ActionResult<ApiResponse<bool>>> Reschedule([FromBody] RescheduleTaskDateRequestViewModel model)
         {
             var userId = GetCurrentUserId();
-            var result = await _calendarService.RescheduleTaskAsync(userId, model);
-            return Ok(ApiResponse<bool>.Ok(result, "Task rescheduled successfully."));
+            var response = await _calendarService.RescheduleTaskAsync(userId, model);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
         }
 
         private Guid GetCurrentUserId()
@@ -45,7 +49,7 @@ namespace TaskPlatform.Api.Controllers
             var subClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
             if (string.IsNullOrEmpty(subClaim) || !Guid.TryParse(subClaim, out var userId))
             {
-                throw new UnauthorizedAccessException("User is not authenticated.");
+                return Guid.Empty;
             }
             return userId;
         }

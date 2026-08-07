@@ -9,11 +9,12 @@ using Modules.Collaboration.Domain.IServices;
 using Modules.Notifications.Domain.IServices;
 using Modules.Projects.Domain.IServices;
 using Modules.Tasks.Domain.IServices;
-using TaskPlatform.Api.Hubs;
 using TaskPlatform.Shared.ViewModels.Collaboration;
 using TaskPlatform.Shared.ViewModels.Common;
 using TaskPlatform.Shared.ViewModels.Notification;
 using TaskPlatform.Shared.ViewModels.Task;
+
+using TaskPlatform.Api.Hubs;
 
 namespace TaskPlatform.Api.Controllers
 {
@@ -24,16 +25,21 @@ namespace TaskPlatform.Api.Controllers
     {
         private readonly ICollaborationService _collaborationService;
         private readonly ITasksService _tasksService;
-        private readonly IProjectsService _projectsService;
         private readonly INotificationService _notificationService;
+        private readonly IProjectsService _projectsService;
         private readonly IHubContext<NotificationsHub> _hubContext;
 
-        public CollaborationController(ICollaborationService collaborationService, ITasksService tasksService, IProjectsService projectsService, INotificationService notificationService, IHubContext<NotificationsHub> hubContext)
+        public CollaborationController(
+            ICollaborationService collaborationService,
+            ITasksService tasksService,
+            INotificationService notificationService,
+            IProjectsService projectsService,
+            IHubContext<NotificationsHub> hubContext)
         {
             _collaborationService = collaborationService;
             _tasksService = tasksService;
-            _projectsService = projectsService;
             _notificationService = notificationService;
+            _projectsService = projectsService;
             _hubContext = hubContext;
         }
 
@@ -49,9 +55,13 @@ namespace TaskPlatform.Api.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _collaborationService.AddTaskCommentAsync(userId, model);
-            var task = await _tasksService.GetTaskByIdAsync(model.TaskId);
-            await LogActivityAsync(userId, task.ProjectId, task.Id, "CommentAdded", $"Commented on \"{task.Title}\".");
-            await NotifyCommentAddedAsync(task, userId);
+            var taskResp = await _tasksService.GetTaskByIdAsync(model.TaskId);
+            if (taskResp.Success && taskResp.Data != null)
+            {
+                var task = taskResp.Data;
+                await LogActivityAsync(userId, task.ProjectId, task.Id, "CommentAdded", $"Commented on \"{task.Title}\".");
+                await NotifyCommentAddedAsync(task, userId);
+            }
             return Ok(ApiResponse<CommentViewModel>.Ok(result, "Comment added successfully."));
         }
 
@@ -75,8 +85,12 @@ namespace TaskPlatform.Api.Controllers
         {
             var userId = GetCurrentUserId();
             var result = await _collaborationService.AddTaskAttachmentAsync(userId, taskId, fileName, filePath, fileSize, contentType);
-            var task = await _tasksService.GetTaskByIdAsync(taskId);
-            await LogActivityAsync(userId, task.ProjectId, task.Id, "AttachmentAdded", $"Attached \"{fileName}\" to \"{task.Title}\".");
+            var taskResp = await _tasksService.GetTaskByIdAsync(taskId);
+            if (taskResp.Success && taskResp.Data != null)
+            {
+                var task = taskResp.Data;
+                await LogActivityAsync(userId, task.ProjectId, task.Id, "AttachmentAdded", $"Attached \"{fileName}\" to \"{task.Title}\".");
+            }
             return Ok(ApiResponse<AttachmentViewModel>.Ok(result, "Attachment uploaded successfully."));
         }
 
@@ -88,7 +102,6 @@ namespace TaskPlatform.Api.Controllers
             return Ok(ApiResponse<bool>.Ok(result, "Attachment deleted."));
         }
 
-        // BR-12-02: Watchers are notified of Status changes, new Comments, and due-date changes only.
         private async Task NotifyCommentAddedAsync(TaskViewModel task, Guid currentUserId)
         {
             var recipients = new HashSet<Guid>();
@@ -155,7 +168,7 @@ namespace TaskPlatform.Api.Controllers
             var subClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
             if (string.IsNullOrEmpty(subClaim) || !Guid.TryParse(subClaim, out var userId))
             {
-                throw new UnauthorizedAccessException("User is not authenticated.");
+                return Guid.Empty;
             }
             return userId;
         }

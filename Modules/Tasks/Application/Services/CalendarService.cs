@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Modules.Tasks.Domain.IServices;
 using Modules.Tasks.Infrastructure.Context;
-using TaskPlatform.Shared.Exceptions;
 using TaskPlatform.Shared.ViewModels.Calendar;
+using TaskPlatform.Shared.ViewModels.Common;
 
 namespace Modules.Tasks.Application.Services
 {
@@ -52,17 +52,17 @@ namespace Modules.Tasks.Application.Services
             }).ToList();
         }
 
-        public async Task<bool> RescheduleTaskAsync(Guid userId, RescheduleTaskDateRequestViewModel model)
+        public async Task<ApiResponse<bool>> RescheduleTaskAsync(Guid userId, RescheduleTaskDateRequestViewModel model)
         {
             var task = await _dbContext.Tasks.FindAsync(model.TaskId);
             if (task == null)
             {
-                throw new DomainException("Task not found.");
+                return ApiResponse<bool>.Fail("Task not found.");
             }
 
             if (model.NewStartDate.HasValue && model.NewDueDate < model.NewStartDate.Value)
             {
-                throw new DomainException("New due date must be on or after start date.");
+                return ApiResponse<bool>.Fail("New due date must be on or after start date.");
             }
 
             task.StartDate = model.NewStartDate ?? task.StartDate;
@@ -70,7 +70,7 @@ namespace Modules.Tasks.Application.Services
             task.UpdatedAt = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync();
-            return true;
+            return ApiResponse<bool>.Ok(true, "Task rescheduled successfully.");
         }
     }
 }

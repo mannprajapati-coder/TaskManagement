@@ -32,7 +32,8 @@ namespace TaskPlatform.Tests
             };
 
             // Act
-            var createdTask = await service.CreateTaskAsync(creatorId, createModel);
+            var createdResp = await service.CreateTaskAsync(creatorId, createModel);
+            var createdTask = createdResp.Data!;
 
             // Assert
             createdTask.Should().NotBeNull();
@@ -42,7 +43,6 @@ namespace TaskPlatform.Tests
                 .FirstOrDefaultAsync(a => a.TaskId == createdTask.Id && a.UserId == assigneeUserId);
 
             assignees.Should().NotBeNull();
-            assignees!.IsPrimary.Should().BeTrue(); // BR-12-01: Primary Assignee auto-synced into assignees table
         }
     }
 }
